@@ -31,9 +31,9 @@ export function LoginStep() {
       subtitle="Log in to manage your properties, bookings, and account activities."
       cardWidthClassName="max-w-[470px]"
       footer={
-        <p className="mt-7 text-center text-[14px] font-medium text-[#555b6b]">
+        <p className="mt-7 text-center text-[14px] font-semibold text-[#4b5563]">
           Don&apos;t have an account?{" "}
-          <Link href="/register" className="font-bold text-[#2760ff]">
+          <Link href="/register" className="font-black text-[#1E5BFF] transition hover:text-[#1849D6]">
             Register as Homeowner
           </Link>
         </p>
@@ -51,17 +51,17 @@ export function LoginStep() {
           />
         </label>
 
-        <div className="mt-4 rounded-[12px] border border-[#dfe6f7] bg-[#f7f8fc] px-4 py-3 text-[13px] text-[#667089]">
-          <p className="font-bold text-[#0f2b71]">Use the same demo accounts as mobile:</p>
-          <p className="mt-1">`renter@bluerock.com` / `renter123`</p>
-          <p>`landlord@bluerock.com` / `landlord123`</p>
-          <p>`admin@bluerock.com` / `admin123`</p>
+        <div className="mt-4 rounded-2xl border border-[#1E5BFF]/15 bg-[#EDF3FF] px-4 py-4 text-[13px] leading-6 text-[#0F2F99]">
+          <p className="font-black text-[#0A2A8C]">✨ Use the same demo accounts as mobile:</p>
+          <p className="mt-2 font-mono text-xs"><span className="font-bold">renter@bluerock.com</span> / <span className="font-bold">renter123</span></p>
+          <p className="font-mono text-xs"><span className="font-bold">landlord@bluerock.com</span> / <span className="font-bold">landlord123</span></p>
+          <p className="font-mono text-xs"><span className="font-bold">admin@bluerock.com</span> / <span className="font-bold">admin123</span></p>
         </div>
 
         {showUnverified ? (
-          <div className="mt-4 flex items-start gap-3 rounded-[9px] bg-[#fde1e1] px-3 py-3 text-[#ff3d3d]">
+          <div className="mt-4 flex items-start gap-3 rounded-xl border border-[#ef4444]/15 bg-[#fef2f2] px-4 py-3 text-[#991b1b]">
             <WarningIcon />
-            <span className="text-[13px] leading-5">
+            <span className="text-[13px] leading-5 font-semibold">
               Please verify your email address to access your account.
             </span>
           </div>
@@ -73,23 +73,23 @@ export function LoginStep() {
         </label>
 
         {error ? (
-          <div className="mt-4 flex items-start gap-3 rounded-[9px] bg-[#fde1e1] px-3 py-3 text-[#ff3d3d]">
+          <div className="mt-4 flex items-start gap-3 rounded-xl border border-[#ef4444]/15 bg-[#fef2f2] px-4 py-3 text-[#991b1b]">
             <WarningIcon />
-            <span className="text-[13px] leading-5">{error}</span>
+            <span className="text-[13px] leading-5 font-semibold">{error}</span>
           </div>
         ) : null}
 
         <div className="mt-4 flex items-center justify-between gap-4 text-[13px]">
-          <label className="flex items-center gap-2 text-[#9aa2b3]">
+          <label className="flex items-center gap-2 text-[#6b7280] font-semibold cursor-pointer">
             <input
               type="checkbox"
               checked={rememberMe}
               onChange={(event) => setRememberMe(event.target.checked)}
-              className="h-4 w-4 rounded border-[#d5d8e2] text-[#2b5df3] focus:ring-[#c9d7ff]"
+              className="h-4 w-4 rounded border-[var(--border)] text-[#1E5BFF] focus:ring-4 focus:ring-[#1E5BFF]/15"
             />
             Remember Me
           </label>
-          <Link href="#" className="font-bold text-[#2760ff]">
+          <Link href="#" className="font-black text-[#1E5BFF] transition hover:text-[#1849D6]">
             Forgot Password?
           </Link>
         </div>

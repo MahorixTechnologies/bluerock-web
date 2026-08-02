@@ -1,14 +1,9 @@
-"use client";
-
 import Link from "next/link";
 
-import { useListings } from "@/lib/listing-hooks";
-import { mockListings } from "@/lib/mock-data";
-import { getCategoryChips } from "@/lib/utils";
+import { getCategoryChips, getFeaturedListings, getSecondaryListings } from "@/lib/utils";
 
 import { AppShell } from "./AppShell";
 import { ListingCard } from "./ListingCard";
-import { useWebAuth } from "./WebAuthProvider";
 
 type StatCard = {
   label: string;
@@ -66,17 +61,15 @@ function StatCard({ card }: { card: StatCard }) {
   );
 }
 
-export function HomePage() {
-  const { accessToken } = useWebAuth();
-  const { data: allListings = mockListings } = useListings({ token: accessToken, scope: "public" });
-  const featured = allListings.slice(0, 4);
-  const moreList = allListings.slice(4, 10);
+export function RenterDashboard() {
+  const featuredListings = getFeaturedListings();
+  const secondaryListings = getSecondaryListings().slice(0, 4);
   const chips = getCategoryChips();
 
   const stats: StatCard[] = [
     {
       label: "Live Listings",
-      value: String(allListings.length),
+      value: "12",
       trend: 10.5,
       trendDirection: "up",
       delta: "+2",
@@ -86,7 +79,7 @@ export function HomePage() {
     },
     {
       label: "Featured Homes",
-      value: String(featured.length),
+      value: String(featuredListings.length),
       trend: 13.5,
       trendDirection: "up",
       delta: "+1",
@@ -239,19 +232,18 @@ export function HomePage() {
                 </button>
               </div>
               <p className="mt-4 text-sm leading-6 text-white/80">
-                Supercharge your sales management and unlock your full potential for
-                extraordinary success.
+                Supercharge your search experience with priority bookings.
               </p>
               <div className="mt-5 grid grid-cols-2 gap-3 rounded-xl bg-white/5 p-3">
                 <div>
-                  <p className="text-xs font-semibold text-white/60">Performance</p>
+                  <p className="text-xs font-semibold text-white/60">Priority</p>
                   <p className="mt-1 text-lg font-black text-white">
-                    <span className="text-[#7CA8FF]">↑</span> 79%
+                    <span className="text-[#7CA8FF]">⚡</span> Enabled
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-white/60">Tools</p>
-                  <p className="mt-1 text-lg font-black text-white">🔧 30+</p>
+                  <p className="text-xs font-semibold text-white/60">Support</p>
+                  <p className="mt-1 text-lg font-black text-white">🔧 24/7</p>
                 </div>
               </div>
             </div>
@@ -277,7 +269,7 @@ export function HomePage() {
           </div>
 
           <div className="grid gap-5 lg:grid-cols-2">
-            {featured.map((listing) => (
+            {featuredListings.slice(0, 4).map((listing) => (
               <ListingCard key={listing.id} listing={listing} />
             ))}
           </div>
@@ -302,7 +294,7 @@ export function HomePage() {
           </div>
 
           <div className="grid gap-5 md:grid-cols-2">
-            {moreList.map((listing) => (
+            {secondaryListings.map((listing) => (
               <ListingCard key={listing.id} listing={listing} variant="list" />
             ))}
           </div>

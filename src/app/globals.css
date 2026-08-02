@@ -1,15 +1,64 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f6f6f7;
-  --foreground: #2d3348;
+  --bg: #eef2f5;
+  --panel: #ffffff;
+  --panel-soft: #f7f8fa;
+  --sidebar: #0A2A8C;
+  --sidebar-hover: #0F37A8;
+  --sidebar-active: #1442C4;
+  --primary: #1E5BFF;
+  --primary-600: #1849D6;
+  --primary-soft: rgba(30, 91, 255, 0.10);
+  --accent: #0b2466;
+  --text: #111827;
+  --muted: #6b7280;
+  --muted-2: #9ca3af;
+  --border: rgba(17, 24, 39, 0.08);
+  --border-strong: rgba(17, 24, 39, 0.14);
+  --success: #1E5BFF;
+  --success-soft: rgba(30, 91, 255, 0.12);
+  --success-bg: #EDF3FF;
+  --danger: #ef4444;
+  --danger-soft: rgba(239, 68, 68, 0.12);
+  --danger-bg: #fef2f2;
+  --trend-up: #1E5BFF;
+  --trend-up-bg: rgba(30, 91, 255, 0.12);
+  --trend-down: #ec4899;
+  --trend-down-bg: rgba(236, 72, 153, 0.10);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
+  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.06), 0 12px 28px rgba(0, 0, 0, 0.05);
+  --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-panel-soft: var(--panel-soft);
+  --color-sidebar: var(--sidebar);
+  --color-primary: var(--primary);
+  --color-primary-600: var(--primary-600);
+  --color-primary-soft: var(--primary-soft);
+  --color-accent: var(--accent);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-muted-2: var(--muted-2);
+  --color-border: var(--border);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-success-bg: var(--success-bg);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-bg: var(--danger-bg);
+  --color-trend-up: var(--trend-up);
+  --color-trend-up-bg: var(--trend-up-bg);
+  --color-trend-down: var(--trend-down);
+  --color-trend-down-bg: var(--trend-down-bg);
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 * {
@@ -17,14 +66,16 @@
 }
 
 html {
-  background: var(--background);
+  background: var(--bg);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
   margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 a {

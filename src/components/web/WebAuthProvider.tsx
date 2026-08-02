@@ -3,6 +3,7 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -17,11 +18,18 @@ type LoginParams = {
   password: string;
 };
 
+type StoredSession = {
+  profile: WebUserProfile;
+  accessToken: string;
+};
+
 type WebAuthContextValue = {
   status: AuthStatus;
   profile: WebUserProfile | null;
+  accessToken: string | null;
   login: (params: LoginParams) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUserProfile: (next: Partial<WebUserProfile>) => void;
 };
 
 type DemoAccount = {
@@ -30,8 +38,9 @@ type DemoAccount = {
   profile: WebUserProfile;
 };
 
-const SESSION_KEY = "bluerock.web.session.v1";
-const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "") ?? "";
+const SESSION_KEY = "bluerock.web.session.v2";
+const _API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "") ?? "";
+export const API_URL = _API_BASE ? `${_API_BASE}/api/v1` : "";
 
 const demoAccounts: DemoAccount[] = [
   {
@@ -71,11 +80,14 @@ const demoAccounts: DemoAccount[] = [
 
 const WebAuthContext = createContext<WebAuthContextValue | null>(null);
 
-function readStoredProfile() {
+function readStoredSession(): StoredSession | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(SESSION_KEY);
-    return raw ? (JSON.parse(raw) as WebUserProfile) : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as StoredSession;
+    if (!parsed?.profile || typeof parsed?.accessToken !== "string") return null;
+    return parsed;
   } catch {
     return null;
   }
@@ -84,7 +96,7 @@ function readStoredProfile() {
 async function loginWithApi({
   email,
   password,
-}: LoginParams): Promise<WebUserProfile | null> {
+}: LoginParams): Promise<{ profile: WebUserProfile; accessToken: string } | null> {
   if (!API_URL) return null;
 
   try {
@@ -95,20 +107,27 @@ async function loginWithApi({
     });
 
     if (!response.ok) return null;
-    const payload = (await response.json()) as Record<string, unknown>;
-    const user = payload?.user;
+    const envelope = (await response.json()) as Record<string, unknown>;
+    const payload = (envelope?.success === true ? envelope.data : envelope) as Record<string, unknown> | undefined;
+    if (!payload || typeof payload !== "object") return null;
+    const accessToken =
+      typeof payload.accessToken === "string" ? payload.accessToken : "";
+    const user = payload.user;
     if (!user || typeof user !== "object" || !("email" in user)) return null;
     const data = user as Record<string, unknown>;
 
     return {
-      email: String(data.email),
-      name: typeof data.name === "string" ? data.name : "",
-      phone: typeof data.phone === "string" ? data.phone : "",
-      emailVerified: Boolean(data.emailVerified),
-      role:
-        data.role === "ADMIN" || data.role === "LANDLORD" || data.role === "RENTER"
-          ? data.role
-          : "RENTER",
+      accessToken,
+      profile: {
+        email: String(data.email),
+        name: typeof data.name === "string" ? data.name : "",
+        phone: typeof data.phone === "string" ? data.phone : "",
+        emailVerified: Boolean(data.emailVerified),
+        role:
+          data.role === "ADMIN" || data.role === "LANDLORD" || data.role === "RENTER"
+            ? data.role
+            : "RENTER",
+      },
     };
   } catch {
     return null;
@@ -124,38 +143,66 @@ function loginWithDemo({ email, password }: LoginParams) {
 }
 
 export function WebAuthProvider({ children }: { children: ReactNode }) {
-  const [profile, setProfile] = useState<WebUserProfile | null>(() => readStoredProfile());
+  const [session, setSession] = useState<StoredSession | null>(() => readStoredSession());
   const [status, setStatus] = useState<AuthStatus>(() =>
-    readStoredProfile() ? "signedIn" : "signedOut",
+    readStoredSession() ? "signedIn" : "signedOut",
   );
+
+  useEffect(() => {
+    if (session) {
+      try {
+        window.localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      } catch {
+        // ignore storage errors (private browsing etc.)
+      }
+    }
+  }, [session]);
 
   const value = useMemo<WebAuthContextValue>(() => {
     return {
       status,
-      profile,
+      profile: session?.profile ?? null,
+      accessToken: session?.accessToken ?? null,
       login: async ({ email, password }) => {
         setStatus("loading");
 
-        const apiProfile = await loginWithApi({ email, password });
-        const nextProfile = apiProfile ?? loginWithDemo({ email, password });
+        const apiResult = await loginWithApi({ email, password });
+        let next: StoredSession | null = null;
+        if (apiResult) {
+          next = { profile: apiResult.profile, accessToken: apiResult.accessToken };
+        } else {
+          const demoProfile = loginWithDemo({ email, password });
+          if (demoProfile) {
+            next = { profile: demoProfile, accessToken: `demo.${demoProfile.role}.${btoa(demoProfile.email)}` };
+          }
+        }
 
-        if (!nextProfile) {
-          setProfile(null);
+        if (!next) {
+          setSession(null);
           setStatus("signedOut");
           throw new Error("Invalid credentials. Use the seeded mobile demo accounts.");
         }
 
-        window.localStorage.setItem(SESSION_KEY, JSON.stringify(nextProfile));
-        setProfile(nextProfile);
+        setSession(next);
         setStatus("signedIn");
       },
       logout: async () => {
-        window.localStorage.removeItem(SESSION_KEY);
-        setProfile(null);
+        try {
+          window.localStorage.removeItem(SESSION_KEY);
+        } catch {
+          // ignore
+        }
+        setSession(null);
         setStatus("signedOut");
       },
+      refreshUserProfile: (next: Partial<WebUserProfile>) => {
+        setSession((prev) => {
+          if (!prev) return prev;
+          return { ...prev, profile: { ...prev.profile, ...next } };
+        });
+      },
     };
-  }, [profile, status]);
+  }, [session, status]);
 
   return <WebAuthContext.Provider value={value}>{children}</WebAuthContext.Provider>;
 }

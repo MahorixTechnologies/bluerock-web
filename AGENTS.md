@@ -84,21 +84,37 @@ Next.js App Router file-based routing. All routes live under `src/app/*`.
 
 | Path | File | Description |
 |---|---|---|
-| `/` | `app/page.tsx` | HomePage — mobile-style discovery |
+| `/` | `app/page.tsx` | Role-dispatched dashboard (LANDLORD→HostDashboard, RENTER/ADMIN→RenterDashboard, signed-out→PublicHome) |
 | `/search` | `app/search/page.tsx` | Search, filters, stacked listing cards |
 | `/listing/[id]` | `app/listing/[id]/page.tsx` | Detail page with images, amenities, booking widget |
 | `/bookings` | `app/bookings/page.tsx` | Renter booking history |
+| `/host/listings` | `app/host/listings/page.tsx` | Landlord-only: host property list with occupancy/revenue + Become-a-Host prompt for renters |
+| `/host/bookings` | `app/host/bookings/page.tsx` | Landlord-only: guest booking approval + messaging |
+| `/host/payouts` | `app/host/payouts/page.tsx` | Landlord-only: disbursement history + payment methods |
 | `/login` | `app/login/page.tsx` | Login (same credentials as mobile) |
 | `/register` | `app/register/page.tsx` | Role selection (Homeowner / Renter) |
 | `/register/[role]` | `app/register/[role]/page.tsx` | Personal info form |
-| `/register/[role]/verify` | `app/register/[role]/verify/page.tsx` | Email verification step |
-| `/register/[role]/password` | `app/register/[role]/password/page.tsx` | Password + confirm + rules |
-| `/register/[role]/success` | `app/register/[role]/success/page.tsx` | Success screen → redirect |
+| `/register/[role]/verify` | `app/register/[role]/verify/page.tsx` | 4-digit code |
+| `/register/[role]/password` | `app/register/[role]/password/page.tsx` | Password + confirm + strength |
+| `/register/[role]/success` | `app/register/[role]/success/page.tsx` | Created → redirect |
+
+### Role routing
+
+Role dispatch lives in `<DashboardRouter />` (`components/web/DashboardRouter.tsx`) used by `/` plus every `/host/*` route. Rules:
+
+- **LANDLORD signed in** → landlord routes render full host UI; `/` renders `LandlordDashboard` (revenue KPIs, listing rows, booking/payout summaries)
+- **RENTER / ADMIN signed in** → `/host/*` routes render a soft "This section is for hosts only" CTA; `/` renders `RenterDashboard` (discovery + featured listings)
+- **Signed out** → `/host/*` shows same host CTA; `/` renders the legacy `HomePage` public discovery panel
+
+The AppShell sidebar nav also switches per role:
+- RENTER/PUBLIC: `Home, Search, Bookings`
+- LANDLORD: `Dashboard (/) , My Listings (/host/listings), Guest Bookings (/host/bookings), Payouts (/host/payouts)`
+- Sidebar section title reflects the active role ("Browse Menu" / "Renter Menu" / "Host Menu")
 
 ### Auth gating
 
 - `/bookings` requires a signed-in session via `WebAuthProvider`. If no session exists it renders a signed-out hero with login CTA.
-- `/register` routes are always reachable; role param must be one of `homeowner` or `renter` (case insensitive match).
+- `/host/*` routes are *not* hard-blocked on session; they render a gentle host-role upsell card for renters/signed-out visitors via DashboardRouter.
 
 ---
 

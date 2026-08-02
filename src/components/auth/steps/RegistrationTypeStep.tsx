@@ -20,7 +20,7 @@ export function RegistrationTypeStep() {
             return (
               <article
                 key={role}
-                className="rounded-[12px] border border-[#edf0f6] bg-white px-4 py-4 shadow-[0_6px_20px_rgba(15,23,42,0.04)]"
+                className="rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-card)] transition-all duration-200 hover:shadow-[var(--shadow-card-hover)]"
               >
                 <button
                   type="button"
@@ -28,14 +28,14 @@ export function RegistrationTypeStep() {
                   className="flex w-full items-start justify-between gap-4 text-left"
                 >
                   <div>
-                    <h2 className="text-[18px] font-extrabold text-[#2760ff]">{content.label}</h2>
-                    <p className="mt-2 max-w-[270px] text-[14px] leading-7 text-[#7c8495]">
+                    <h2 className="text-[18px] font-black tracking-tight text-[#1E5BFF]">{content.label}</h2>
+                    <p className="mt-2 max-w-[280px] text-[14px] leading-7 text-[#6b7280]">
                       {content.description}
                     </p>
                   </div>
                   <span
-                    className={`mt-1 shrink-0 ${
-                      expanded ? "text-[#1d1d1f]" : "text-[#7a97ff]"
+                    className={`mt-1 shrink-0 transition-colors ${
+                      expanded ? "text-[#0A2A8C]" : "text-[#1E5BFF]"
                     }`}
                   >
                     <ChevronIcon open={expanded} />
@@ -45,17 +45,17 @@ export function RegistrationTypeStep() {
                 {expanded ? (
                   <div className="mt-5 space-y-3">
                     {content.bullets.map((bullet) => (
-                      <div key={bullet} className="flex items-center gap-3">
+                      <div key={bullet} className="flex items-center gap-3 rounded-xl bg-[var(--panel-soft)] px-3 py-2">
                         <StarBullet />
-                        <span className="text-[14px] text-[#8a91a1]">{bullet}</span>
+                        <span className="text-[14px] font-medium text-[#4b5563]">{bullet}</span>
                       </div>
                     ))}
 
                     <Link
                       href={`/register/${role}`}
-                      className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-[11px] bg-[#2b5df3] px-4 text-[15px] font-bold text-white shadow-[0_12px_24px_rgba(43,93,243,0.25)] transition-transform hover:-translate-y-0.5"
+                      className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0A2A8C] px-5 text-[14px] font-black text-white shadow-[0_8px_24px_rgba(10,42,140,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#07206E]"
                     >
-                      {content.cta}
+                      {content.cta} →
                     </Link>
                   </div>
                 ) : null}

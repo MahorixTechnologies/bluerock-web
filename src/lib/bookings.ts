@@ -1,11 +1,13 @@
 "use client";
 
-import type { Listing, WebBooking } from "./models";
+import type { Listing, WebBooking, OwnerBooking } from "./models";
 import { diffNights, parseDate } from "./utils";
+import { makeMockBookings, makeMockOwnerBookings } from "./mock-bookings";
+import { apiFetch } from "./api-client";
 
 const STORAGE_KEY = "bluerock.web.bookings.v1";
 
-export function getStoredBookings() {
+export function getStoredBookings(): WebBooking[] {
   if (typeof window === "undefined") return [] as WebBooking[];
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -18,6 +20,153 @@ export function getStoredBookings() {
 export function saveStoredBookings(bookings: WebBooking[]) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings));
+}
+
+function normalizeBooking(raw: any, fallbackImage?: string): WebBooking {
+  const listing = raw?.listing ?? {};
+  return {
+    id: String(raw?.id ?? ""),
+    listingId: String(raw?.listingId ?? listing?.id ?? ""),
+    listingTitle: String(listing?.title ?? ""),
+    location: String(listing?.location ?? ""),
+    image: fallbackImage ?? "",
+    currency: listing?.currency === "USD" ? "USD" : "NGN",
+    startDate: String(raw?.startDate ?? "").slice(0, 10),
+    endDate: String(raw?.endDate ?? "").slice(0, 10),
+    nights: Number(raw?.nights ?? 0),
+    pricePerNight: Number(listing?.pricePerNight ?? 0),
+    subtotal: Number(raw?.subtotal ?? 0),
+    serviceFee: Number(raw?.serviceFee ?? 0),
+    total: Number(raw?.total ?? 0),
+    status:
+      raw?.status === "PENDING" ||
+      raw?.status === "CONFIRMED" ||
+      raw?.status === "REJECTED" ||
+      raw?.status === "CANCELLED" ||
+      raw?.status === "COMPLETED"
+        ? raw.status
+        : "PENDING",
+    paymentStatus:
+      raw?.paymentStatus === "PAID" || raw?.paymentStatus === "REFUNDED"
+        ? raw.paymentStatus
+        : "UNPAID",
+    createdAt: String(raw?.createdAt ?? new Date().toISOString()),
+  };
+}
+
+function normalizeOwnerBooking(raw: any): OwnerBooking {
+  const listing = raw?.listing ?? {};
+  const renter = raw?.renter ?? {};
+  return {
+    id: String(raw?.id ?? ""),
+    listingId: String(raw?.listingId ?? listing?.id ?? ""),
+    startDate: String(raw?.startDate ?? "").slice(0, 10),
+    endDate: String(raw?.endDate ?? "").slice(0, 10),
+    nights: Number(raw?.nights ?? 0),
+    subtotal: Number(raw?.subtotal ?? 0),
+    serviceFee: Number(raw?.serviceFee ?? 0),
+    total: Number(raw?.total ?? 0),
+    status:
+      raw?.status === "PENDING" ||
+      raw?.status === "CONFIRMED" ||
+      raw?.status === "REJECTED" ||
+      raw?.status === "CANCELLED" ||
+      raw?.status === "COMPLETED"
+        ? raw.status
+        : "PENDING",
+    paymentStatus:
+      raw?.paymentStatus === "PAID" || raw?.paymentStatus === "REFUNDED"
+        ? raw.paymentStatus
+        : "UNPAID",
+    createdAt: String(raw?.createdAt ?? new Date().toISOString()),
+    listing: {
+      id: String(listing?.id ?? ""),
+      title: String(listing?.title ?? ""),
+      location: String(listing?.location ?? ""),
+      currency: listing?.currency === "USD" ? "USD" : "NGN",
+      pricePerNight: Number(listing?.pricePerNight ?? 0),
+    },
+    renter: {
+      id: String(renter?.id ?? ""),
+      email: String(renter?.email ?? ""),
+      name: renter?.name ? String(renter.name) : null,
+      phone: renter?.phone ? String(renter.phone) : null,
+    },
+  };
+}
+
+export async function fetchMyBookings(accessToken: string | null): Promise<WebBooking[]> {
+  try {
+    const raw = await apiFetch("/bookings/me", { accessToken });
+    if (!Array.isArray(raw)) return makeMockBookings();
+    return raw.map((r) => normalizeBooking(r));
+  } catch {
+    return makeMockBookings();
+  }
+}
+
+export async function fetchOwnerBookings(accessToken: string | null): Promise<OwnerBooking[]> {
+  try {
+    const raw = await apiFetch("/bookings/owner", { accessToken });
+    if (!Array.isArray(raw)) return makeMockOwnerBookings();
+    return raw.map((r) => normalizeOwnerBooking(r));
+  } catch {
+    return makeMockOwnerBookings();
+  }
+}
+
+export async function createBookingOnApi(params: {
+  accessToken: string | null;
+  listingId: string;
+  startDate: string;
+  endDate: string;
+}): Promise<WebBooking | null> {
+  try {
+    const raw = await apiFetch("/bookings", {
+      accessToken: params.accessToken,
+      method: "POST",
+      body: JSON.stringify({
+        listingId: params.listingId,
+        startDate: params.startDate,
+        endDate: params.endDate,
+      }),
+    });
+    return normalizeBooking(raw);
+  } catch {
+    return null;
+  }
+}
+
+export async function markBookingPaid(params: {
+  accessToken: string | null;
+  bookingId: string;
+}): Promise<WebBooking | null> {
+  try {
+    const raw = await apiFetch(`/bookings/${params.bookingId}/pay`, {
+      accessToken: params.accessToken,
+      method: "PATCH",
+    });
+    return normalizeBooking(raw);
+  } catch {
+    return null;
+  }
+}
+
+export async function decideOwnerBooking(params: {
+  accessToken: string | null;
+  bookingId: string;
+  decision: "ACCEPT" | "REJECT";
+}): Promise<OwnerBooking | null> {
+  try {
+    const raw = await apiFetch(`/bookings/${params.bookingId}/decision`, {
+      accessToken: params.accessToken,
+      method: "PATCH",
+      body: JSON.stringify({ decision: params.decision }),
+    });
+    return normalizeOwnerBooking(raw);
+  } catch {
+    return null;
+  }
 }
 
 export function createBookingFromListing(args: {
@@ -54,6 +203,8 @@ export function createBookingFromListing(args: {
     subtotal,
     serviceFee,
     total,
+    status: "PENDING",
+    paymentStatus: "UNPAID",
     createdAt: new Date().toISOString(),
   };
 
