@@ -3,16 +3,16 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { AppShell } from "@/components/web/AppShell";
-import { DashboardRouter } from "@/components/web/DashboardRouter";
+import { AppShell } from "@/components/layout/AppShell";
+import { DashboardRouter } from "@/components/feature/home/DashboardRouter";
 import {
   EmptyBookingsState,
   HostBookingQueue,
-} from "@/components/web/bookings";
-import { useWebAuth } from "@/components/web/WebAuthProvider";
-import { decideOwnerBooking, fetchOwnerBookings } from "@/lib/bookings";
-import type { OwnerBooking } from "@/lib/models";
-import { formatMoney } from "@/lib/utils";
+} from "@/components/feature/booking";
+import { useWebAuth } from "@/providers/WebAuthProvider";
+import { decideOwnerBooking, fetchOwnerBookings } from "@/api/bookings";
+import type { OwnerBooking } from "@/types/models";
+import { formatMoney } from "@/utils";
 
 type FilterKey = "All" | "Confirmed" | "Pending" | "Completed" | "Cancelled" | "Rejected";
 

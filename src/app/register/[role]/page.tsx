@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
-import { RegistrationDetailsStep } from "@/components/auth/steps/RegistrationDetailsStep";
-import { getRoleContent } from "@/components/auth/data";
+import { RegistrationDetailsStep } from "@/components/feature/auth/steps/RegistrationDetailsStep";
+import { getRoleContent } from "@/components/feature/auth/data";
 
 export default async function RegistrationDetailsPage({
   params,

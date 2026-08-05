@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
-import { SuccessStep } from "@/components/auth/steps/SuccessStep";
-import { getRoleContent } from "@/components/auth/data";
+import { SuccessStep } from "@/components/feature/auth/steps/SuccessStep";
+import { getRoleContent } from "@/components/feature/auth/data";
 
 export default async function SuccessPage({
   params,

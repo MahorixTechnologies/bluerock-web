@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 
-import { VerificationStep } from "@/components/auth/steps/VerificationStep";
-import { getRoleContent } from "@/components/auth/data";
+import { VerificationStep } from "@/components/feature/auth/steps/VerificationStep";
+import { getRoleContent } from "@/components/feature/auth/data";
 
 export default async function VerificationPage({
   params,

@@ -4,9 +4,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { AppShell } from "@/components/web/AppShell";
-import { DashboardRouter } from "@/components/web/DashboardRouter";
-import { useWebAuth } from "@/components/web/WebAuthProvider";
+import { AppShell } from "@/components/layout/AppShell";
+import { DashboardRouter } from "@/components/feature/home/DashboardRouter";
+import { useWebAuth } from "@/providers/WebAuthProvider";
 
 function initialsFor(value: string) {
   const trimmed = value.trim();

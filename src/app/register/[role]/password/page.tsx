@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 
-import { PasswordStep } from "@/components/auth/steps/PasswordStep";
-import { getRoleContent } from "@/components/auth/data";
+import { PasswordStep } from "@/components/feature/auth/steps/PasswordStep";
+import { getRoleContent } from "@/components/feature/auth/data";
 
 export default async function PasswordPage({
   params,

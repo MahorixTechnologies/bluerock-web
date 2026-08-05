@@ -2,11 +2,11 @@
 
 import { useParams } from "next/navigation";
 
-import { AppShell } from "@/components/web/AppShell";
-import { ListingDetailClient } from "@/components/web/ListingDetailClient";
-import { useWebAuth } from "@/components/web/WebAuthProvider";
-import { useListing } from "@/lib/listing-hooks";
-import { mockListings } from "@/lib/mock-data";
+import { AppShell } from "@/components/layout/AppShell";
+import { ListingDetailClient } from "@/components/feature/listing/ListingDetailClient";
+import { useWebAuth } from "@/providers/WebAuthProvider";
+import { useListing } from "@/hooks/useListings";
+import { mockListings } from "@/constants/mock-data";
 
 export default function ListingDetailPage() {
   const params = useParams();

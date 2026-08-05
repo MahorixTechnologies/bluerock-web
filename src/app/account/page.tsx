@@ -4,15 +4,15 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { AppShell } from "@/components/web/AppShell";
-import { DashboardRouter } from "@/components/web/DashboardRouter";
-import { useWebAuth } from "@/components/web/WebAuthProvider";
-import { BookingStatusBadge } from "@/components/web/bookings/BookingStatusBadge";
-import { fetchMyBookings } from "@/lib/bookings";
-import { updateMe, fetchMe } from "@/lib/user";
-import type { WebBooking, WebUserProfile } from "@/lib/models";
-import { formatBookingDatesCompact } from "@/lib/booking-status";
-import { formatMoney, initialsFor } from "@/lib/utils";
+import { AppShell } from "@/components/layout/AppShell";
+import { DashboardRouter } from "@/components/feature/home/DashboardRouter";
+import { useWebAuth } from "@/providers/WebAuthProvider";
+import { BookingStatusBadge } from "@/components/feature/booking/BookingStatusBadge";
+import { fetchMyBookings } from "@/api/bookings";
+import { updateMe, fetchMe } from "@/api/users";
+import type { WebBooking, WebUserProfile } from "@/types/models";
+import { formatBookingDatesCompact } from "@/constants/booking-status";
+import { formatMoney, initialsFor } from "@/utils";
 
 function RolePill({ role }: { role: WebUserProfile["role"] }) {
   const map = {

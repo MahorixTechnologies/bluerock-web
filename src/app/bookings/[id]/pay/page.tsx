@@ -4,19 +4,19 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { AppShell } from "@/components/web/AppShell";
-import { useWebAuth } from "@/components/web/WebAuthProvider";
-import { BookingStatusBadge } from "@/components/web/bookings";
-import { fetchMyBookings } from "@/lib/bookings";
+import { AppShell } from "@/components/layout/AppShell";
+import { useWebAuth } from "@/providers/WebAuthProvider";
+import { BookingStatusBadge } from "@/components/feature/booking";
+import { fetchMyBookings } from "@/api/bookings";
 import {
   buildSyntheticReceipt,
   confirmPayment,
   createPaymentIntent,
   getReceiptForBooking,
-} from "@/lib/payments";
-import type { Receipt, WebBooking } from "@/lib/models";
-import { formatBookingDatesCompact } from "@/lib/booking-status";
-import { formatMoney, initialsFor } from "@/lib/utils";
+} from "@/api/payments";
+import type { Receipt, WebBooking } from "@/types/models";
+import { formatBookingDatesCompact } from "@/constants/booking-status";
+import { formatMoney, initialsFor } from "@/utils";
 
 export function PaymentStatusBadge({
   paymentStatus,
@@ -418,8 +418,8 @@ async function markBookingPaidWithPersistence(params: {
   accessToken: string | null;
   bookingId: string;
 }) {
-  const intents = await import("@/lib/payments");
-  const bookingsModule = await import("@/lib/bookings");
+  const intents = await import("@/api/payments");
+  const bookingsModule = await import("@/api/bookings");
   const allBookings = await bookingsModule.fetchMyBookings(params.accessToken);
   const target = allBookings.find((b) => b.id === params.bookingId);
   if (target) {
@@ -475,7 +475,7 @@ export default function BookingsPayPage() {
       } catch {
         // already persisted
       }
-      const { markBookingPaid } = await import("@/lib/bookings");
+      const { markBookingPaid } = await import("@/api/bookings");
       const updated = await markBookingPaid({
         accessToken,
         bookingId: booking.id,

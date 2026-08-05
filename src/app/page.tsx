@@ -1,7 +1,7 @@
-import { LandlordDashboard } from "@/components/web/LandlordDashboard";
-import { RenterDashboard } from "@/components/web/RenterDashboard";
-import { HomePage as PublicHome } from "@/components/web/HomePage";
-import { DashboardRouter } from "@/components/web/DashboardRouter";
+import { LandlordDashboard } from "@/components/feature/home/LandlordDashboard";
+import { RenterDashboard } from "@/components/feature/home/RenterDashboard";
+import { HomePage as PublicHome } from "@/components/feature/home/HomePage";
+import { DashboardRouter } from "@/components/feature/home/DashboardRouter";
 
 export default function HomeRoute() {
   return (

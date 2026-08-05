@@ -1,4 +1,4 @@
-import { BookingsPage } from "@/components/web/BookingsPage";
+import { BookingsPage } from "@/components/feature/booking/BookingsPage";
 
 export default function BookingsRoute() {
   return <BookingsPage />;

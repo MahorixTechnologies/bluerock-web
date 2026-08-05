@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 
-import { AppShell } from "@/components/web/AppShell";
-import { DashboardRouter } from "@/components/web/DashboardRouter";
-import { formatMoney } from "@/lib/utils";
-import { apiFetch } from "@/lib/api-client";
-import { ALL_PROPERTY_TYPES, type Listing } from "@/lib/models";
+import { AppShell } from "@/components/layout/AppShell";
+import { DashboardRouter } from "@/components/feature/home/DashboardRouter";
+import { formatMoney } from "@/utils";
+import { apiFetch } from "@/api/client";
+import { ALL_PROPERTY_TYPES, type Listing } from "@/types/models";
 import {
   EMPTY_DRAFT,
   type ListingDraft,
@@ -15,8 +15,8 @@ import {
   listingToDraft,
   updateListing,
   useListings,
-} from "@/lib/listing-hooks";
-import { useWebAuth } from "@/components/web/WebAuthProvider";
+} from "@/hooks/useListings";
+import { useWebAuth } from "@/providers/WebAuthProvider";
 import { useEffect, useState } from "react";
 
 type HostListing = {

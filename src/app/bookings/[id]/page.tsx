@@ -3,16 +3,16 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { AppShell } from "@/components/web/AppShell";
+import { AppShell } from "@/components/layout/AppShell";
 import {
   BookingDetailCard,
   BookingTimeline,
   EmptyBookingsState,
-} from "@/components/web/bookings";
-import { useWebAuth } from "@/components/web/WebAuthProvider";
-import { fetchMyBookings } from "@/lib/bookings";
-import type { WebBooking } from "@/lib/models";
-import { formatMoney } from "@/lib/utils";
+} from "@/components/feature/booking";
+import { useWebAuth } from "@/providers/WebAuthProvider";
+import { fetchMyBookings } from "@/api/bookings";
+import type { WebBooking } from "@/types/models";
+import { formatMoney } from "@/utils";
 
 export default function BookingDetailPage() {
   const { id } = useParams();

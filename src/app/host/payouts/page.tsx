@@ -1,8 +1,8 @@
 import Link from "next/link";
 
-import { AppShell } from "@/components/web/AppShell";
-import { DashboardRouter } from "@/components/web/DashboardRouter";
-import { formatMoney } from "@/lib/utils";
+import { AppShell } from "@/components/layout/AppShell";
+import { DashboardRouter } from "@/components/feature/home/DashboardRouter";
+import { formatMoney } from "@/utils";
 
 type PayoutBatch = {
   id: string;
