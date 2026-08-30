@@ -9,7 +9,7 @@ export function BookingTimeline({ booking }: { booking: Pick<WebBooking, "status
 
   return (
     <div className="rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-card)]">
-      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#9ca3af] mb-4">
+      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--muted-2)] mb-4">
         Booking Timeline
       </p>
       <div className="relative">
@@ -46,20 +46,20 @@ export function BookingTimeline({ booking }: { booking: Pick<WebBooking, "status
                   <div className="flex flex-wrap items-baseline gap-2">
                     <p
                       className={`text-sm font-black tracking-tight ${
-                        event.done ? "text-[#111827]" : "text-[#9ca3af]"
+                        event.done ? "text-[var(--text)]" : "text-[var(--muted-2)]"
                       }`}
                     >
                       {event.label}
                     </p>
                   </div>
                   {event.date ? (
-                    <p className="text-xs font-semibold text-[#6b7280] tabular-nums mt-0.5">
+                    <p className="text-xs font-semibold text-[var(--muted)] tabular-nums mt-0.5">
                       {event.date}
                     </p>
                   ) : null}
                   <p
                     className={`mt-0.5 text-xs ${
-                      event.done ? "text-[#4b5563]" : "text-[#9ca3af]"
+                      event.done ? "text-[#4b5563]" : "text-[var(--muted-2)]"
                     }`}
                   >
                     {event.title}

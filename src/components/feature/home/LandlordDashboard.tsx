@@ -1,9 +1,11 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { mockListings } from "@/constants/mock-data";
 import { formatMoney } from "@/utils";
 
 import { AppShell } from "@/components/layout/AppShell";
+import { StatCard } from "@/components/ui/StatCard";
 
 type HostStat = {
   label: string;
@@ -40,106 +42,56 @@ type HostBooking = {
   currency: "USD" | "NGN";
 };
 
-function HostStatCard({ card }: { card: HostStat }) {
-  const trendBadge =
-    card.trendDirection === "up"
-      ? "bg-[var(--trend-up-bg)] text-[var(--trend-up)]"
-      : "bg-[var(--trend-down-bg)] text-[var(--trend-down)]";
-  const trendArrow = card.trendDirection === "up" ? "⦿" : "⊖";
-
-  return (
-    <div className="group relative overflow-hidden rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)]">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#6b7280]">
-            {card.label}
-          </p>
-          <div className="mt-3 flex items-baseline gap-2">
-            <p className="text-[28px] font-black tracking-tight text-[#111827]">
-              {card.value}
-            </p>
-            <span
-              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${trendBadge}`}
-            >
-              <span className="text-[10px]">{trendArrow}</span>
-              {Math.abs(card.trend)}%
-            </span>
-          </div>
-        </div>
-        <span
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xl transition-transform duration-300 group-hover:scale-105"
-          style={{ background: card.iconBg, color: card.iconColor }}
-        >
-          {card.icon}
-        </span>
-      </div>
-      <div className="mt-4 flex items-center justify-between border-t border-[var(--border)] pt-3">
-        <p className="text-xs font-semibold text-[#6b7280]">
-          <span className="text-[#1E5BFF]">{card.delta}</span> vs last 30 days
-        </p>
-        <span className="text-[#6b7280] transition-transform duration-200 group-hover:translate-x-0.5">
-          →
-        </span>
-      </div>
-    </div>
-  );
-}
-
 function HostListingRow({ listing }: { listing: HostListing }) {
   const statusStyle =
     listing.status === "Active"
       ? "bg-[var(--trend-up-bg)] text-[var(--trend-up)]"
       : listing.status === "Paused"
         ? "bg-[rgba(234,179,8,0.12)] text-[#ca8a04]"
-        : "bg-[rgba(107,114,128,0.12)] text-[#6b7280]";
+        : "bg-[rgba(107,114,128,0.12)] text-[var(--muted)]";
 
   return (
     <div className="grid grid-cols-[1.6fr_1.2fr_0.8fr_1fr_1fr] items-center gap-4 border-b border-[var(--border)] px-4 py-4 last:border-b-0 sm:px-6">
       <div className="flex items-center gap-4 min-w-0">
         <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--panel-soft)]">
-          <img
-            src={listing.image}
-            alt={listing.title}
-            className="h-full w-full object-cover"
-            loading="lazy"
-          />
+          <Image src={listing.image} alt={listing.title} fill sizes="56px" className="object-cover" />
         </div>
         <div className="min-w-0">
-          <p className="truncate text-sm font-bold text-[#111827]">{listing.title}</p>
-          <p className="mt-0.5 truncate text-xs text-[#6b7280]">{listing.location}</p>
+          <p className="truncate text-sm font-bold text-[var(--text)]">{listing.title}</p>
+          <p className="mt-0.5 truncate text-xs text-[var(--muted)]">{listing.location}</p>
         </div>
       </div>
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#9ca3af]">
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">
           Rate
         </p>
-        <p className="mt-1 text-sm font-black tabular-nums text-[#111827]">
+        <p className="mt-1 text-sm font-black tabular-nums text-[var(--text)]">
           {formatMoney(listing.pricePerNight, listing.currency)}
-          <span className="ml-1 text-xs font-semibold text-[#6b7280]">/night</span>
+          <span className="ml-1 text-xs font-semibold text-[var(--muted)]">/night</span>
         </p>
       </div>
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#9ca3af]">
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">
           Occupancy
         </p>
-        <p className="mt-1 text-sm font-black tabular-nums text-[#1E5BFF]">
+        <p className="mt-1 text-sm font-black tabular-nums text-[var(--primary)]">
           {listing.occupancy}%
         </p>
       </div>
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#9ca3af]">
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">
           Booked Nights
         </p>
-        <p className="mt-1 text-sm font-black tabular-nums text-[#111827]">
+        <p className="mt-1 text-sm font-black tabular-nums text-[var(--text)]">
           {listing.totalNights}
         </p>
       </div>
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#9ca3af]">
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">
             Revenue
           </p>
-          <p className="mt-1 text-sm font-black tabular-nums text-[#111827]">
+          <p className="mt-1 text-sm font-black tabular-nums text-[var(--text)]">
             {formatMoney(listing.totalRevenue, listing.currency)}
           </p>
         </div>
@@ -159,41 +111,41 @@ function HostBookingRow({ booking }: { booking: HostBooking }) {
       ? "bg-[var(--trend-up-bg)] text-[var(--trend-up)]"
       : booking.status === "Pending"
         ? "bg-[rgba(234,179,8,0.12)] text-[#ca8a04]"
-        : "bg-[rgba(107,114,128,0.12)] text-[#6b7280]";
+        : "bg-[rgba(107,114,128,0.12)] text-[var(--muted)]";
 
   return (
     <div className="grid grid-cols-[1.4fr_1.4fr_1fr_0.8fr_1fr_0.9fr] items-center gap-4 border-b border-[var(--border)] px-4 py-4 last:border-b-0 sm:px-6">
       <div className="min-w-0">
-        <p className="truncate text-sm font-bold text-[#111827]">{booking.guest}</p>
-        <p className="mt-0.5 truncate text-xs text-[#6b7280]">Booking {booking.id}</p>
+        <p className="truncate text-sm font-bold text-[var(--text)]">{booking.guest}</p>
+        <p className="mt-0.5 truncate text-xs text-[var(--muted)]">Booking {booking.id}</p>
       </div>
       <div className="min-w-0">
-        <p className="truncate text-sm font-semibold text-[#111827]">
+        <p className="truncate text-sm font-semibold text-[var(--text)]">
           {booking.listingTitle}
         </p>
-        <p className="mt-0.5 text-xs text-[#6b7280]">{booking.startDate} · {booking.nights} nights</p>
+        <p className="mt-0.5 text-xs text-[var(--muted)]">{booking.startDate} · {booking.nights} nights</p>
       </div>
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#9ca3af]">
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">
           Check-in
         </p>
-        <p className="mt-1 text-sm font-bold tabular-nums text-[#111827]">
+        <p className="mt-1 text-sm font-bold tabular-nums text-[var(--text)]">
           {booking.startDate}
         </p>
       </div>
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#9ca3af]">
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">
           Nights
         </p>
-        <p className="mt-1 text-sm font-black tabular-nums text-[#1E5BFF]">
+        <p className="mt-1 text-sm font-black tabular-nums text-[var(--primary)]">
           {booking.nights}
         </p>
       </div>
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#9ca3af]">
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">
           Payout
         </p>
-        <p className="mt-1 text-sm font-black tabular-nums text-[#111827]">
+        <p className="mt-1 text-sm font-black tabular-nums text-[var(--text)]">
           {formatMoney(booking.total, booking.currency)}
         </p>
       </div>
@@ -228,27 +180,27 @@ function PayoutHistoryRow({
   return (
     <div className="grid grid-cols-[1.4fr_1.6fr_1fr_1fr_1fr] items-center gap-4 border-b border-[var(--border)] px-4 py-4 last:border-b-0 sm:px-6">
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#9ca3af]">
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">
           Date
         </p>
-        <p className="mt-1 text-sm font-bold tabular-nums text-[#111827]">{date}</p>
+        <p className="mt-1 text-sm font-bold tabular-nums text-[var(--text)]">{date}</p>
       </div>
       <div className="min-w-0">
-        <p className="truncate text-sm font-bold text-[#111827]">{label}</p>
-        <p className="mt-0.5 truncate text-xs text-[#6b7280]">{method}</p>
+        <p className="truncate text-sm font-bold text-[var(--text)]">{label}</p>
+        <p className="mt-0.5 truncate text-xs text-[var(--muted)]">{method}</p>
       </div>
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#9ca3af]">
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">
           Method
         </p>
-        <p className="mt-1 text-sm font-semibold text-[#111827]">{method}</p>
+        <p className="mt-1 text-sm font-semibold text-[var(--text)]">{method}</p>
       </div>
       <span
         className={`justify-self-start inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide uppercase ${statusStyle}`}
       >
         {status}
       </span>
-      <p className="justify-self-end text-sm font-black tabular-nums text-[#1E5BFF]">
+      <p className="justify-self-end text-sm font-black tabular-nums text-[var(--primary)]">
         +{formatMoney(amount, currency)}
       </p>
     </div>
@@ -321,7 +273,7 @@ export function LandlordDashboard() {
       delta: "+$3,820",
       icon: "💰",
       iconBg: "rgba(30, 91, 255, 0.12)",
-      iconColor: "#1E5BFF",
+      iconColor: "var(--primary)",
     },
     {
       label: "Occupancy Rate",
@@ -330,8 +282,8 @@ export function LandlordDashboard() {
       trendDirection: "up",
       delta: "+4.6%",
       icon: "🏠",
-      iconBg: "rgba(30, 91, 255, 0.10)",
-      iconColor: "#1E5BFF",
+      iconBg: "var(--primary-soft)",
+      iconColor: "var(--primary)",
     },
     {
       label: "Active Listings",
@@ -351,7 +303,7 @@ export function LandlordDashboard() {
       delta: "-1",
       icon: "👥",
       iconBg: "rgba(236, 72, 153, 0.10)",
-      iconColor: "#ec4899",
+      iconColor: "var(--trend-down)",
     },
   ];
 
@@ -367,7 +319,27 @@ export function LandlordDashboard() {
       <div className="space-y-6">
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {hostStats.map((card) => (
-            <HostStatCard key={card.label} card={card} />
+            <StatCard
+              key={card.label}
+              eyebrow={card.label}
+              value={card.value}
+              icon={card.icon}
+              tint={card.iconColor}
+              badge={{
+                label: `${Math.abs(card.trend)}%`,
+                positive: card.trendDirection === "up",
+              }}
+              footer={
+                <>
+                  <p className="text-xs font-semibold text-[var(--muted)]">
+                    <span className="text-[var(--primary)]">{card.delta}</span> vs last 30 days
+                  </p>
+                  <span className="text-[var(--muted)] transition-transform duration-200 group-hover:translate-x-0.5">
+                    →
+                  </span>
+                </>
+              }
+            />
           ))}
         </section>
 
@@ -375,19 +347,19 @@ export function LandlordDashboard() {
           <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-[var(--shadow-card)]">
             <div className="flex flex-col gap-3 border-b border-[var(--border)] px-6 py-5 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#6b7280]">
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted)]">
                   Revenue Snapshot
                 </p>
-                <h2 className="mt-2 text-[26px] font-black tracking-tight text-[#111827]">
+                <h2 className="mt-2 text-[26px] font-black tracking-tight text-[var(--text)]">
                   Track your earnings
                 </h2>
-                <p className="mt-2 max-w-md text-sm leading-6 text-[#6b7280]">
+                <p className="mt-2 max-w-md text-sm leading-6 text-[var(--muted)]">
                   Monthly revenue, occupancy and payout trends across every property you host.
                 </p>
               </div>
               <Link
                 href="/host/payouts"
-                className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#0A2A8C] px-5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(10,42,140,0.25)] transition hover:bg-[#07206E]"
+                className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[var(--sidebar)] px-5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(10,42,140,0.25)] transition hover:bg-[#07206E]"
               >
                 View Payouts <span>→</span>
               </Link>
@@ -405,19 +377,19 @@ export function LandlordDashboard() {
                   <div key={item.label}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <p className="w-10 text-sm font-black tracking-wide text-[#6b7280]">
+                        <p className="w-10 text-sm font-black tracking-wide text-[var(--muted)]">
                           {item.label}
                         </p>
                         <div className="flex-1">
                           <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[var(--panel-soft)]">
                             <div
-                              className="h-full rounded-full bg-gradient-to-r from-[#1E5BFF] to-[#7CA8FF]"
+                              className="h-full rounded-full bg-gradient-to-r from-[var(--primary)] to-[#7CA8FF]"
                               style={{ width: item.pct }}
                             />
                           </div>
                         </div>
                       </div>
-                      <p className="text-sm font-black tabular-nums text-[#111827]">
+                      <p className="text-sm font-black tabular-nums text-[var(--text)]">
                         {item.value}
                       </p>
                     </div>
@@ -431,11 +403,11 @@ export function LandlordDashboard() {
             <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-card)]">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#6b7280]">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted)]">
                     Next Payout
                   </p>
                   <div className="mt-3 flex items-baseline gap-2">
-                    <p className="text-[26px] font-black tracking-tight text-[#111827]">
+                    <p className="text-[26px] font-black tracking-tight text-[var(--text)]">
                       ${upcomingPayable.toLocaleString()}
                     </p>
                     <span className="inline-flex items-center gap-1 rounded-full bg-[var(--trend-up-bg)] px-2 py-0.5 text-[11px] font-bold text-[var(--trend-up)]">
@@ -443,35 +415,35 @@ export function LandlordDashboard() {
                     </span>
                   </div>
                 </div>
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl text-xl" style={{ background: "rgba(30, 91, 255, 0.12)", color: "#1E5BFF" }}>
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl text-xl" style={{ background: "rgba(30, 91, 255, 0.12)", color: "var(--primary)" }}>
                   💳
                 </span>
               </div>
               <div className="mt-5 space-y-3 text-sm">
                 <div className="flex items-center justify-between">
-                  <p className="text-[#6b7280]">Confirmed stays</p>
-                  <p className="font-bold tabular-nums text-[#111827]">
+                  <p className="text-[var(--muted)]">Confirmed stays</p>
+                  <p className="font-bold tabular-nums text-[var(--text)]">
                     ${hostBookings.filter((b) => b.status === "Confirmed").reduce((s, b) => s + b.total, 0).toLocaleString()}
                   </p>
                 </div>
                 <div className="flex items-center justify-between">
-                  <p className="text-[#6b7280]">Service fee (5%)</p>
-                  <p className="font-bold tabular-nums text-[#ef4444]">
+                  <p className="text-[var(--muted)]">Service fee (5%)</p>
+                  <p className="font-bold tabular-nums text-[var(--danger)]">
                     -${Math.round(upcomingPayable * 0.05).toLocaleString()}
                   </p>
                 </div>
                 <div className="flex items-center justify-between pt-2 border-t border-[var(--border)]">
-                  <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#9ca3af]">
+                  <p className="text-sm font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">
                     Deposits Friday
                   </p>
-                  <p className="text-base font-black tabular-nums text-[#1E5BFF]">
+                  <p className="text-base font-black tabular-nums text-[var(--primary)]">
                     ${Math.round(upcomingPayable * 0.95).toLocaleString()}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-gradient-to-br from-[#0A2A8C] via-[#0E3298] to-[#1442C4] p-5 shadow-[0_12px_32px_rgba(10,42,140,0.35)] text-white">
+            <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-gradient-to-br from-[var(--sidebar)] via-[#0E3298] to-[var(--sidebar-active)] p-5 shadow-[0_12px_32px_rgba(10,42,140,0.35)] text-white">
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#7CA8FF]/70">
@@ -481,12 +453,12 @@ export function LandlordDashboard() {
                     Host Plan Pro
                   </h3>
                 </div>
-                <button
-                  type="button"
-                  className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-bold text-[#0A2A8C] shadow transition hover:bg-[#EDF3FF]"
+                <Link
+                  href="/host/listings"
+                  className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-bold text-[var(--sidebar)] shadow transition hover:bg-[#EDF3FF]"
                 >
                   Upgrade
-                </button>
+                </Link>
               </div>
               <p className="mt-4 text-sm leading-6 text-white/80">
                 Promote properties to Featured, zero service fees on stays, priority
@@ -511,23 +483,23 @@ export function LandlordDashboard() {
         <section className="space-y-4">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h3 className="text-[20px] font-black tracking-tight text-[#111827]">
+              <h3 className="text-[20px] font-black tracking-tight text-[var(--text)]">
                 My Listings
               </h3>
-              <p className="mt-1 text-sm text-[#6b7280]">
+              <p className="mt-1 text-sm text-[var(--muted)]">
                 Occupancy, booked nights and lifetime revenue for every property.
               </p>
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                className="inline-flex h-10 items-center justify-center rounded-xl border border-[var(--border)] bg-white px-4 text-sm font-bold text-[#111827] transition hover:bg-[var(--panel-soft)]"
+                className="inline-flex h-10 items-center justify-center rounded-xl border border-[var(--border)] bg-white px-4 text-sm font-bold text-[var(--text)] transition hover:bg-[var(--panel-soft)]"
               >
                 Export
               </button>
               <Link
                 href="/host/listings"
-                className="inline-flex h-10 items-center justify-center gap-1 rounded-xl bg-[#1E5BFF] px-4 text-sm font-bold text-white shadow-[0_8px_20px_rgba(30,91,255,0.35)] transition hover:bg-[#1849D6]"
+                className="inline-flex h-10 items-center justify-center gap-1 rounded-xl bg-[var(--primary)] px-4 text-sm font-bold text-white shadow-[0_8px_20px_rgba(30,91,255,0.35)] transition hover:bg-[var(--primary-600)]"
               >
                 + New Listing
               </Link>
@@ -539,7 +511,7 @@ export function LandlordDashboard() {
               {["Property", "Rate", "Occupancy", "Booked Nights", "Revenue"].map((header) => (
                 <p
                   key={header}
-                  className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#6b7280]"
+                  className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--muted)]"
                 >
                   {header}
                 </p>
@@ -555,16 +527,16 @@ export function LandlordDashboard() {
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h3 className="text-[20px] font-black tracking-tight text-[#111827]">
+                <h3 className="text-[20px] font-black tracking-tight text-[var(--text)]">
                   Recent Guest Bookings
                 </h3>
-                <p className="mt-1 text-sm text-[#6b7280]">
+                <p className="mt-1 text-sm text-[var(--muted)]">
                   Latest confirmed, pending and completed guest stays.
                 </p>
               </div>
               <Link
                 href="/host/bookings"
-                className="inline-flex items-center gap-1 text-sm font-bold text-[#1E5BFF] transition hover:text-[#1849D6]"
+                className="inline-flex items-center gap-1 text-sm font-bold text-[var(--primary)] transition hover:text-[var(--primary-600)]"
               >
                 See all <span>→</span>
               </Link>
@@ -574,7 +546,7 @@ export function LandlordDashboard() {
                 {["Guest", "Property", "Check-in", "Nights", "Payout", "Status"].map((header) => (
                   <p
                     key={header}
-                    className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#6b7280]"
+                    className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--muted)]"
                   >
                     {header}
                   </p>
@@ -589,16 +561,16 @@ export function LandlordDashboard() {
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h3 className="text-[20px] font-black tracking-tight text-[#111827]">
+                <h3 className="text-[20px] font-black tracking-tight text-[var(--text)]">
                   Payout History
                 </h3>
-                <p className="mt-1 text-sm text-[#6b7280]">
+                <p className="mt-1 text-sm text-[var(--muted)]">
                   Weekly disbursements — bank transfer and wallet payouts.
                 </p>
               </div>
               <Link
                 href="/host/payouts"
-                className="inline-flex items-center gap-1 text-sm font-bold text-[#1E5BFF] transition hover:text-[#1849D6]"
+                className="inline-flex items-center gap-1 text-sm font-bold text-[var(--primary)] transition hover:text-[var(--primary-600)]"
               >
                 See all <span>→</span>
               </Link>
@@ -608,7 +580,7 @@ export function LandlordDashboard() {
                 {["Date", "Batch", "Method", "Status", "Amount"].map((header) => (
                   <p
                     key={header}
-                    className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#6b7280]"
+                    className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--muted)]"
                   >
                     {header}
                   </p>

@@ -21,8 +21,8 @@ export function getBookingStatusMeta(status: BookingStatus): StatusMeta {
     case "COMPLETED":
       return {
         label: "Completed",
-        badgeClass: "bg-[rgba(107,114,128,0.12)] text-[#6b7280]",
-        tint: "#6b7280",
+        badgeClass: "bg-[rgba(107,114,128,0.12)] text-[var(--muted)]",
+        tint: "var(--muted)",
       };
     case "PENDING":
       return {
@@ -33,14 +33,14 @@ export function getBookingStatusMeta(status: BookingStatus): StatusMeta {
     case "REJECTED":
       return {
         label: "Rejected",
-        badgeClass: "bg-[rgba(239,68,68,0.12)] text-[#ef4444]",
-        tint: "#ef4444",
+        badgeClass: "bg-[var(--danger-soft)] text-[var(--danger)]",
+        tint: "var(--danger)",
       };
     case "CANCELLED":
       return {
         label: "Cancelled",
-        badgeClass: "bg-[rgba(239,68,68,0.12)] text-[#ef4444]",
-        tint: "#ef4444",
+        badgeClass: "bg-[var(--danger-soft)] text-[var(--danger)]",
+        tint: "var(--danger)",
       };
   }
 }
@@ -62,7 +62,7 @@ export function getPaymentStatusMeta(
     case "REFUNDED":
       return {
         label: "Refunded",
-        badgeClass: "bg-[rgba(107,114,128,0.12)] text-[#6b7280]",
+        badgeClass: "bg-[rgba(107,114,128,0.12)] text-[var(--muted)]",
       };
   }
 }
@@ -157,7 +157,6 @@ export function getTimelineEvents(
 
   const now = new Date().toISOString().slice(0, 10);
   const started = startDate <= now;
-  const ended = endDate < now;
   const completed = status === "COMPLETED";
 
   events.push({

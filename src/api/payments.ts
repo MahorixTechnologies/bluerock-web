@@ -1,33 +1,10 @@
-import type {
-  Currency,
-  PaymentIntent,
-  Receipt,
-  WebBooking,
-} from "@/types/models";
+import type { Currency, Receipt, WebBooking } from "@/types/models";
 import { formatMoney } from "@/utils";
-import {
-  getStoredBookings,
-  markBookingPaid,
-  saveStoredBookings,
-} from "@/api/bookings";
+import { apiFetch } from "@/api/client";
+import { getStoredBookings, saveStoredBookings } from "@/api/bookings";
+import type { PaymentProvider } from "@/components/feature/payment/PaymentMethodCard";
 
-const INTENTS_KEY = "bluerock.web.intents.v1";
 const RECEIPTS_KEY = "bluerock.web.receipts.v1";
-
-function getStoredIntents(): PaymentIntent[] {
-  if (typeof window === "undefined") return [] as PaymentIntent[];
-  try {
-    const raw = window.localStorage.getItem(INTENTS_KEY);
-    return raw ? (JSON.parse(raw) as PaymentIntent[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveStoredIntents(intents: PaymentIntent[]) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(INTENTS_KEY, JSON.stringify(intents));
-}
 
 function getStoredReceipts(): Receipt[] {
   if (typeof window === "undefined") return [] as Receipt[];
@@ -96,25 +73,66 @@ export function getPaymentSummary(
   };
 }
 
-export async function markBookingPaidWithPersistence(params: {
+export type InitiatePaymentResult = {
+  authorizationUrl: string;
+  reference: string;
+};
+
+/**
+ * Kicks off a real Paystack/Flutterwave transaction. `callbackUrl` should
+ * point at `/payments/callback` with `purpose`/`targetId` query params so
+ * that page knows what to verify and where to send the user next.
+ */
+export async function initiatePayment(params: {
   accessToken: string | null;
-  bookingId: string;
-}): Promise<WebBooking | null> {
-  const updated = await markBookingPaid(params);
-  if (updated) {
-    const stored = getStoredBookings();
-    const idx = stored.findIndex((b) => b.id === params.bookingId);
-    if (idx >= 0) {
-      const copy = [...stored];
-      copy[idx] = {
-        ...copy[idx],
-        paymentStatus: "PAID",
-        status: "CONFIRMED",
-      };
-      saveStoredBookings(copy);
-    }
+  purpose: "BOOKING" | "FEATURED_LISTING";
+  targetId: string;
+  provider: PaymentProvider;
+  callbackUrl: string;
+}): Promise<InitiatePaymentResult | null> {
+  try {
+    return (await apiFetch("/payments/initiate", {
+      accessToken: params.accessToken,
+      method: "POST",
+      body: JSON.stringify({
+        purpose: params.purpose,
+        targetId: params.targetId,
+        provider: params.provider,
+        callbackUrl: params.callbackUrl,
+      }),
+    })) as InitiatePaymentResult;
+  } catch {
+    return null;
   }
-  return updated;
+}
+
+export type VerifyPaymentResult = {
+  success: boolean;
+  alreadyProcessed?: boolean;
+};
+
+/**
+ * Independently confirms a transaction with the provider via the backend —
+ * this is what actually flips the booking/listing state, not anything the
+ * client claims happened.
+ */
+export async function verifyPayment(params: {
+  accessToken: string | null;
+  reference: string;
+  providerTransactionId?: string;
+}): Promise<VerifyPaymentResult | null> {
+  try {
+    return (await apiFetch("/payments/verify", {
+      accessToken: params.accessToken,
+      method: "POST",
+      body: JSON.stringify({
+        reference: params.reference,
+        providerTransactionId: params.providerTransactionId,
+      }),
+    })) as VerifyPaymentResult;
+  } catch {
+    return null;
+  }
 }
 
 function formatShortLocaleDate(iso: string): string {
@@ -190,67 +208,28 @@ export function getReceiptData(booking: WebBooking): {
   };
 }
 
-export function createPaymentIntent(booking: WebBooking): PaymentIntent {
-  const intent: PaymentIntent = {
-    id: `pi_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
-    bookingId: booking.id,
-    amount: booking.total,
-    currency: booking.currency as Currency,
-    status: "CREATED",
-    clientSecret: `pi_secret_${Math.random().toString(36).slice(2, 20)}`,
-    createdAt: new Date().toISOString(),
-  };
-  const all = getStoredIntents();
-  saveStoredIntents([intent, ...all]);
-  return intent;
-}
-
-export function confirmPayment(intentId: string): { booking: WebBooking } {
-  const intents = getStoredIntents();
-  const idx = intents.findIndex((i) => i.id === intentId);
-  let intent = intents[idx];
-  if (!intent) {
-    intent = {
-      id: intentId,
-      bookingId: intentId,
-      amount: 0,
-      currency: "USD",
-      status: "CAPTURED",
-      createdAt: new Date().toISOString(),
-    };
-  }
-  const captured: PaymentIntent = { ...intent, status: "CAPTURED" };
-  if (idx >= 0) {
-    const copy = [...intents];
-    copy[idx] = captured;
-    saveStoredIntents(copy);
-  } else {
-    saveStoredIntents([captured, ...intents]);
+/**
+ * There's no dedicated receipt-generation endpoint — once a real payment is
+ * verified, this builds a display-only receipt from the booking's own
+ * (now-real) totals and stores it locally, same as the rest of this app's
+ * receipt viewing already worked before real payments existed.
+ */
+export function recordReceiptForPaidBooking(booking: WebBooking): Receipt {
+  const receipt = buildSyntheticReceipt(booking);
+  const receipts = getStoredReceipts();
+  if (!receipts.some((r) => r.bookingId === receipt.bookingId)) {
+    saveStoredReceipts([receipt, ...receipts]);
   }
 
   const bookings = getStoredBookings();
-  const bIdx = bookings.findIndex((b) => b.id === captured.bookingId);
-  let updatedBooking: WebBooking | undefined;
-  if (bIdx >= 0) {
+  const idx = bookings.findIndex((b) => b.id === booking.id);
+  if (idx >= 0) {
     const copy = [...bookings];
-    updatedBooking = {
-      ...copy[bIdx],
-      paymentStatus: "PAID",
-      status: "CONFIRMED",
-    };
-    copy[bIdx] = updatedBooking;
+    copy[idx] = { ...copy[idx], paymentStatus: "PAID", status: "CONFIRMED" };
     saveStoredBookings(copy);
-  } else {
-    updatedBooking = bookings[0];
   }
 
-  const receiptForBooking = buildSyntheticReceipt(updatedBooking ?? (bookings[0] as WebBooking));
-  const receipts = getStoredReceipts();
-  if (!receipts.some((r) => r.bookingId === receiptForBooking.bookingId)) {
-    saveStoredReceipts([receiptForBooking, ...receipts]);
-  }
-
-  return { booking: updatedBooking ?? ({} as WebBooking) };
+  return receipt;
 }
 
 export function buildSyntheticReceipt(booking: WebBooking): Receipt {

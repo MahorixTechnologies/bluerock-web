@@ -44,6 +44,8 @@ export type Listing = {
   rules?: string[];
   status?: "PENDING" | "APPROVED" | "REJECTED" | "ARCHIVED" | "Published";
   featured?: boolean;
+  featuredUntil?: string;
+  createdAt?: string;
   host: {
     name: string;
     phone?: string;
@@ -123,6 +125,16 @@ export type WebUserProfile = {
   phone: string;
   emailVerified: boolean;
   role: UserRole;
+};
+
+export type OwnerApplicationStatus = "PENDING" | "APPROVED" | "REJECTED" | "NONE";
+
+export type OwnerApplicationResult = {
+  id: string;
+  email: string;
+  role: UserRole;
+  ownerApplicationStatus: OwnerApplicationStatus;
+  ownerApplicationAt: string | null;
 };
 
 export type PaymentIntent = {

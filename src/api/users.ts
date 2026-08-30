@@ -1,5 +1,5 @@
 import { apiFetch } from "@/api/client";
-import type { WebUserProfile } from "@/types/models";
+import type { OwnerApplicationStatus, WebUserProfile } from "@/types/models";
 
 export async function fetchMe(accessToken: string | null): Promise<WebUserProfile | null> {
   try {
@@ -20,6 +20,26 @@ export async function fetchMe(accessToken: string | null): Promise<WebUserProfil
   } catch {
     return null;
   }
+}
+
+export async function applyForOwnerRole(
+  accessToken: string | null,
+): Promise<OwnerApplicationStatus> {
+  if (!accessToken) {
+    throw new Error("You need to be signed in to apply.");
+  }
+  const raw = await apiFetch("/users/me/owner-application", {
+    accessToken,
+    method: "POST",
+  });
+  const data = (raw ?? {}) as Record<string, unknown>;
+  const status = data.ownerApplicationStatus;
+  return status === "PENDING" ||
+    status === "APPROVED" ||
+    status === "REJECTED" ||
+    status === "NONE"
+    ? status
+    : "PENDING";
 }
 
 export async function updateMe(

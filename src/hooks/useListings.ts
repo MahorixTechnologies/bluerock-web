@@ -79,7 +79,14 @@ export function useListings(params: UseListingsParams) {
   }, [url, token, scope]);
 
   useEffect(() => {
-    void load();
+    let cancelled = false;
+    void (async () => {
+      if (cancelled) return;
+      await load();
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [load]);
 
   return { data, loading, error, refetch: load } as const;
@@ -91,15 +98,16 @@ export function useListing(id: string | null, token?: string | null) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!id) {
-      setData(null);
-      setLoading(false);
-      return;
-    }
     let cancelled = false;
-    setLoading(true);
-    setError(null);
-    (async () => {
+    void (async () => {
+      if (cancelled) return;
+      if (!id) {
+        setData(null);
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      setError(null);
       try {
         if (!process.env.NEXT_PUBLIC_API_URL) {
           const found = mockListings.find((l) => l.id === id) ?? mockListings[0] ?? null;

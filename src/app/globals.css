@@ -16,9 +16,9 @@
   --muted-2: #9ca3af;
   --border: rgba(17, 24, 39, 0.08);
   --border-strong: rgba(17, 24, 39, 0.14);
-  --success: #1E5BFF;
-  --success-soft: rgba(30, 91, 255, 0.12);
-  --success-bg: #EDF3FF;
+  --success: #16a34a;
+  --success-soft: rgba(22, 163, 74, 0.12);
+  --success-bg: #f0fdf4;
   --danger: #ef4444;
   --danger-soft: rgba(239, 68, 68, 0.12);
   --danger-bg: #fef2f2;

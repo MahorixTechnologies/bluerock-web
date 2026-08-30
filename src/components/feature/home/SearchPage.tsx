@@ -103,15 +103,15 @@ export function SearchPage() {
             ].map((field, i) => (
               <div
                 key={i}
-                className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--panel-soft)] px-3.5 transition-all duration-200 focus-within:border-[#1E5BFF] focus-within:bg-white focus-within:ring-4 focus-within:ring-[#1E5BFF]/10"
+                className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--panel-soft)] px-3.5 transition-all duration-200 focus-within:border-[var(--primary)] focus-within:bg-white focus-within:ring-4 focus-within:ring-[var(--primary)]/10"
               >
-                <span className="text-base text-[#6b7280]">{field.prefix}</span>
+                <span className="text-base text-[var(--muted)]">{field.prefix}</span>
                 <input
                   value={field.value}
                   onChange={(event) => field.setValue(event.target.value)}
                   placeholder={field.placeholder}
                   inputMode={field.inputMode}
-                  className="h-12 w-full bg-transparent text-sm text-[#111827] outline-none placeholder:text-[#9ca3af]"
+                  className="h-12 w-full bg-transparent text-sm text-[var(--text)] outline-none placeholder:text-[var(--muted-2)]"
                 />
               </div>
             ))}
@@ -127,7 +127,7 @@ export function SearchPage() {
                   onClick={() => setType(active ? "" : option)}
                   className={`rounded-xl border px-4 py-2 text-xs font-bold transition-all duration-200 ${
                     active
-                      ? "border-[#16a34a] bg-[#16a34a]/10 text-[#16a34a] shadow-sm"
+                      ? "border-[var(--primary)] bg-[var(--primary-soft)] text-[var(--primary)] shadow-sm"
                       : "border-[var(--border)] bg-[var(--panel-soft)] text-[#4b5563] hover:border-[var(--border-strong)] hover:bg-white"
                   }`}
                 >
@@ -140,7 +140,7 @@ export function SearchPage() {
               <button
                 type="button"
                 onClick={clearFilters}
-                className="ml-auto inline-flex items-center gap-1.5 rounded-xl border border-[#ef4444]/20 bg-[#ef4444]/5 px-4 py-2 text-xs font-bold text-[#ef4444] transition hover:bg-[#ef4444]/10"
+                className="ml-auto inline-flex items-center gap-1.5 rounded-xl border border-[var(--danger)]/20 bg-[var(--danger)]/5 px-4 py-2 text-xs font-bold text-[var(--danger)] transition hover:bg-[var(--danger)]/10"
               >
                 ✕ Clear ({activeFilters})
               </button>
@@ -150,11 +150,11 @@ export function SearchPage() {
 
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#1E5BFF]/12 text-sm text-[#1E5BFF]">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--primary)]/12 text-sm text-[var(--primary)]">
               📋
             </span>
             <p className="text-sm font-bold text-[#374151]">
-              <span className="text-base font-black text-[#111827] tabular-nums">
+              <span className="text-base font-black text-[var(--text)] tabular-nums">
                 {listings.length}
               </span>{" "}
               {listings.length === 1 ? "result" : "results"} found
@@ -173,15 +173,15 @@ export function SearchPage() {
             <span className="flex mx-auto h-16 w-16 items-center justify-center rounded-2xl bg-[var(--panel-soft)] text-3xl">
               🔍
             </span>
-            <p className="mt-5 text-lg font-black text-[#111827]">No results</p>
-            <p className="mt-2 text-sm text-[#6b7280]">
+            <p className="mt-5 text-lg font-black text-[var(--text)]">No results</p>
+            <p className="mt-2 text-sm text-[var(--muted)]">
               Try adjusting your search filters or clearing them to see all listings.
             </p>
             {activeFilters > 0 ? (
               <button
                 type="button"
                 onClick={clearFilters}
-                className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-[#1E5BFF] px-5 py-2.5 text-xs font-bold text-white shadow-[0_6px_16px_rgba(30,91,255,0.25)] transition hover:bg-[#1849D6]"
+                className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-[var(--primary)] px-5 py-2.5 text-xs font-bold text-white shadow-[0_6px_16px_rgba(30,91,255,0.25)] transition hover:bg-[var(--primary-600)]"
               >
                 Clear all filters
               </button>

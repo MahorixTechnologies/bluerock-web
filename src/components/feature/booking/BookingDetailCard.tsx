@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -37,12 +38,14 @@ export function BookingDetailCard({
 
   return (
     <article className="group overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-card-hover)]">
-      <div className="relative">
+      <div className="relative h-[220px] w-full">
         {booking.image ? (
-          <img
+          <Image
             src={booking.image}
             alt={booking.listingTitle}
-            className="h-[220px] w-full object-cover"
+            fill
+            sizes="(min-width: 1024px) 50vw, 100vw"
+            className="object-cover"
           />
         ) : (
           <div className="h-[220px] w-full bg-gradient-to-br from-[#e5e7eb] via-[#f3f4f6] to-[#e5e7eb]" />
@@ -76,25 +79,25 @@ export function BookingDetailCard({
       <div className="space-y-5 p-5">
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-xl border border-[var(--border)] bg-[var(--panel-soft)] p-4">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#9ca3af]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--muted-2)]">
               Check-in
             </p>
-            <p className="mt-2 text-sm font-black text-[#111827] tabular-nums">
+            <p className="mt-2 text-sm font-black text-[var(--text)] tabular-nums">
               {formatLongDate(booking.startDate)}
             </p>
           </div>
           <div className="rounded-xl border border-[var(--border)] bg-[var(--panel-soft)] p-4">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#9ca3af]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--muted-2)]">
               Check-out
             </p>
-            <p className="mt-2 text-sm font-black text-[#111827] tabular-nums">
+            <p className="mt-2 text-sm font-black text-[var(--text)] tabular-nums">
               {formatLongDate(booking.endDate)}
             </p>
           </div>
         </div>
 
         <div className="rounded-xl border border-[var(--border)] bg-[var(--panel-soft)] p-5">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#9ca3af] mb-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--muted-2)] mb-4">
             Price Breakdown
           </p>
           <div className="space-y-3">
@@ -102,24 +105,24 @@ export function BookingDetailCard({
               <p className="text-sm font-semibold text-[#4b5563]">
                 {formatMoney(booking.pricePerNight, booking.currency)} / night × {booking.nights} nights
               </p>
-              <p className="text-sm font-bold text-[#111827] tabular-nums">
+              <p className="text-sm font-bold text-[var(--text)] tabular-nums">
                 {formatMoney(booking.subtotal, booking.currency)}
               </p>
             </div>
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-[#4b5563]">Subtotal</p>
-              <p className="text-sm font-bold text-[#111827] tabular-nums">
+              <p className="text-sm font-bold text-[var(--text)] tabular-nums">
                 {formatMoney(booking.subtotal, booking.currency)}
               </p>
             </div>
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-[#4b5563]">Service fee (10%)</p>
-              <p className="text-sm font-bold text-[#111827] tabular-nums">
+              <p className="text-sm font-bold text-[var(--text)] tabular-nums">
                 {formatMoney(booking.serviceFee, booking.currency)}
               </p>
             </div>
             <div className="border-t border-[var(--border)] pt-3 flex items-center justify-between">
-              <p className="text-sm font-black text-[#111827]">Total</p>
+              <p className="text-sm font-black text-[var(--text)]">Total</p>
               <p className="text-lg font-black tracking-tight text-[rgba(16,185,129,1)] tabular-nums">
                 {formatMoney(booking.total, booking.currency)}
               </p>

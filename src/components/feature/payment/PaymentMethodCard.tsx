@@ -1,109 +1,89 @@
 "use client";
 
-import { useState } from "react";
+export type PaymentProvider = "PAYSTACK" | "FLUTTERWAVE";
 
-type PaymentMethod = "card" | "transfer" | "wallet";
-
-const METHOD_OPTIONS: Array<{
-  key: PaymentMethod;
+const PROVIDER_OPTIONS: Array<{
+  key: PaymentProvider;
   icon: string;
   title: string;
   subtitle: string;
-  logos?: React.ReactNode;
+  accent: string;
 }> = [
   {
-    key: "card",
+    key: "PAYSTACK",
     icon: "💳",
-    title: "Credit / Debit card",
-    subtitle: "Visa, Mastercard, Amex",
-    logos: (
-      <div className="flex items-center gap-1.5">
-        <span className="inline-flex h-5 w-8 items-center justify-center rounded bg-gradient-to-br from-[#1A3CC8] to-[#1E5BFF] text-[9px] font-black italic tracking-wide text-white shadow-sm">
-          VISA
-        </span>
-        <span className="inline-flex h-5 w-8 items-center justify-center rounded bg-gradient-to-br from-[#ea4335] to-[#fbbc05] text-[9px] font-black text-white shadow-sm">
-          MC
-        </span>
-      </div>
-    ),
+    title: "Paystack",
+    subtitle: "Card, bank transfer, USSD",
+    accent: "#00C3F7",
   },
   {
-    key: "transfer",
-    icon: "⇋",
-    title: "Bank Transfer",
-    subtitle: "Secure direct deposit",
-  },
-  {
-    key: "wallet",
-    icon: "₿",
-    title: "Digital wallet",
-    subtitle: "PayPal, Apple Pay & more",
+    key: "FLUTTERWAVE",
+    icon: "🌊",
+    title: "Flutterwave",
+    subtitle: "Card, bank transfer, mobile money",
+    accent: "#F5A623",
   },
 ];
 
 export function PaymentMethodCard({
-  method: initialMethod = "card",
+  selected,
+  onChange,
 }: {
-  method?: PaymentMethod;
+  selected: PaymentProvider;
+  onChange: (provider: PaymentProvider) => void;
 }) {
-  const [selected, setSelected] = useState<PaymentMethod>(initialMethod);
-
   return (
-    <div className="rounded-[28px] border border-[rgba(16,185,129,0.15)] bg-white p-6 shadow-[0_10px_40px_rgba(16,185,129,0.06)]">
+    <div className="rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-card)]">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#059669]/70">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--primary)]/70">
             Payment method
           </p>
-          <h3 className="mt-1 text-lg font-black tracking-tight text-[#064e3b]">
+          <h3 className="mt-1 text-lg font-black tracking-tight text-[var(--accent)]">
             Choose how to pay
           </h3>
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        {METHOD_OPTIONS.map((opt) => {
+      <div className="grid gap-3 sm:grid-cols-2">
+        {PROVIDER_OPTIONS.map((opt) => {
           const isActive = selected === opt.key;
           return (
             <label
               key={opt.key}
               className={`group relative cursor-pointer rounded-2xl border p-4 transition-all duration-200 ${
                 isActive
-                  ? "border-[#10b981] bg-[rgba(16,185,129,0.06)] shadow-[0_0_0_3px_rgba(16,185,129,0.12)]"
-                  : "border-[rgba(17,24,39,0.08)] bg-white hover:border-[rgba(16,185,129,0.3)] hover:bg-[rgba(16,185,129,0.03)]"
+                  ? "border-[var(--primary)] bg-[var(--primary-soft)] shadow-[0_0_0_3px_rgba(30,91,255,0.12)]"
+                  : "border-[var(--border)] bg-white hover:border-[var(--primary)]/30 hover:bg-[var(--primary)]/[0.03]"
               }`}
             >
               <input
                 type="radio"
-                name="payment-method"
+                name="payment-provider"
                 value={opt.key}
                 checked={isActive}
-                onChange={() => setSelected(opt.key)}
+                onChange={() => onChange(opt.key)}
                 className="sr-only"
               />
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-start gap-3">
                   <div
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl ${
-                      isActive
-                        ? "bg-gradient-to-br from-[#059669] to-[#047857] text-white shadow-[0_4px_12px_rgba(5,150,105,0.3)]"
-                        : "bg-[#f3f4f6] text-[#4b5563]"
-                    }`}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl text-white shadow-sm"
+                    style={{ background: opt.accent }}
                   >
                     {opt.icon}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-black text-[#111827]">{opt.title}</p>
-                    <p className="mt-0.5 text-[11px] font-semibold text-[#6b7280]">
+                    <p className="text-sm font-black text-[var(--text)]">{opt.title}</p>
+                    <p className="mt-0.5 text-[11px] font-semibold text-[var(--muted)]">
                       {opt.subtitle}
                     </p>
-                    {opt.logos ? <div className="mt-2">{opt.logos}</div> : null}
                   </div>
                 </div>
                 <span
                   className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition ${
                     isActive
-                      ? "border-[#10b981] bg-[#10b981]"
+                      ? "border-[var(--primary)] bg-[var(--primary)]"
                       : "border-[#d1d5db] bg-white"
                   }`}
                 >
@@ -127,10 +107,11 @@ export function PaymentMethodCard({
         })}
       </div>
 
-      <div className="mt-5 flex items-start gap-2 rounded-xl border border-[rgba(16,185,129,0.15)] bg-[rgba(16,185,129,0.04)] px-4 py-3">
-        <span className="mt-0.5 text-sm text-[#059669]">ℹ️</span>
-        <p className="text-xs font-semibold leading-relaxed text-[#065f46]">
-          Demo build — all methods act the same. No real charges.
+      <div className="mt-5 flex items-start gap-2 rounded-xl border border-[var(--primary)]/15 bg-[var(--primary)]/[0.04] px-4 py-3">
+        <span className="mt-0.5 text-sm text-[var(--primary)]">🔒</span>
+        <p className="text-xs font-semibold leading-relaxed text-[var(--accent)]">
+          You&apos;ll be redirected to {selected === "PAYSTACK" ? "Paystack" : "Flutterwave"} to
+          complete payment securely, then brought back here.
         </p>
       </div>
     </div>

@@ -1,27 +1,87 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
 
 import { getRoleContent, maskEmail, type Role } from "../data";
 import {
+  InputLabel,
   PrimaryButton,
   SectionLabel,
   StepCard,
   StepHeader,
+  TextInput,
 } from "../AuthElements";
+import { WarningIcon } from "../icons";
 import { AuthShell } from "../AuthShell";
+import { requestEmailVerification, verifyEmail } from "@/api/auth";
 
 export function VerificationStep({ role }: { role: Role }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const content = getRoleContent(role);
-  const [otp, setOtp] = useState(["5", "2", "2", "5"]);
+  const email = searchParams.get("email") ?? "jsmith@gmail.com";
+
+  const [code, setCode] = useState("");
+  const [demoToken, setDemoToken] = useState<string | null>(null);
+  const [requesting, setRequesting] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [requestNotice, setRequestNotice] = useState<string | null>(null);
+  const requestedRef = useRef(false);
+
+  async function sendCode() {
+    setRequesting(true);
+    setError(null);
+    setRequestNotice(null);
+    try {
+      const result = await requestEmailVerification(email);
+      if (result.emailVerificationToken) {
+        setDemoToken(result.emailVerificationToken);
+        setCode(result.emailVerificationToken);
+      } else {
+        setRequestNotice("If an account exists for this email, a verification link was sent.");
+      }
+    } catch (err) {
+      if (err instanceof Error && err.message === "API_URL not configured") {
+        setError(
+          "Email verification needs a connected backend (NEXT_PUBLIC_API_URL). This demo environment can't send codes right now.",
+        );
+      } else {
+        setError(err instanceof Error ? err.message : "Could not send a verification code.");
+      }
+    } finally {
+      setRequesting(false);
+    }
+  }
+
+  useEffect(() => {
+    if (requestedRef.current) return;
+    requestedRef.current = true;
+    void sendCode();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!content) return null;
 
-  const email = searchParams.get("email") ?? "jsmith@gmail.com";
-  const canContinue = otp.every((digit) => digit.length === 1);
+  const canContinue = code.trim().length > 0 && !verifying;
+
+  async function handleContinue() {
+    setVerifying(true);
+    setError(null);
+    try {
+      await verifyEmail(code.trim());
+      router.push(`/register/${role}/password?email=${encodeURIComponent(email)}`);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "That code didn't work. Double check the link from your email.",
+      );
+    } finally {
+      setVerifying(false);
+    }
+  }
 
   return (
     <AuthShell>
@@ -33,52 +93,59 @@ export function VerificationStep({ role }: { role: Role }) {
         />
 
         <div className="mt-7 border-t border-[#eef1f5] pt-5">
-          <SectionLabel>VERIFY ACCOUNT</SectionLabel>
+          <SectionLabel>VERIFY EMAIL</SectionLabel>
 
           <p className="mt-5 text-[15px] leading-7 text-[#737b8c]">
-            We&apos;ll send a verification link to the registered email address{" "}
-            <span className="font-extrabold text-[#1f2536]">{maskEmail(email)}</span>
+            We&apos;ve sent a verification code to{" "}
+            <span className="font-extrabold text-[#1f2536]">{maskEmail(email)}</span>. Paste it
+            below to continue.
           </p>
 
-          <div className="mt-5 grid grid-cols-4 gap-4">
-            {otp.map((digit, index) => (
-              <input
-                key={index}
-                aria-label={`Verification digit ${index + 1}`}
-                inputMode="numeric"
-                maxLength={1}
-                value={digit}
-                onChange={(event) => {
-                  const value = event.target.value.replace(/\D/g, "").slice(0, 1);
-                  setOtp((current) =>
-                    current.map((item, itemIndex) =>
-                      itemIndex === index ? value : item,
-                    ),
-                  );
-                }}
-                className="h-[60px] w-full rounded-[9px] border border-[#e4e7ee] bg-white text-center text-[24px] font-extrabold text-[#2b5df3] outline-none transition focus:border-[#7a97ff] focus:ring-2 focus:ring-[#dfe7ff]"
-              />
-            ))}
-          </div>
+          {demoToken ? (
+            <div className="mt-4 rounded-xl border border-[var(--primary)]/15 bg-[#EDF3FF] px-4 py-3 text-[13px] leading-6 text-[#0F2F99]">
+              <p className="font-black text-[var(--sidebar)]">
+                ✨ Demo mode: no email server is wired up, so we&apos;ve pre-filled the code below
+              </p>
+            </div>
+          ) : null}
+
+          {requestNotice ? (
+            <p className="mt-4 text-[13px] font-semibold text-[#6d90ff]">{requestNotice}</p>
+          ) : null}
+
+          <label className="mt-5 block">
+            <InputLabel required>Verification code</InputLabel>
+            <TextInput value={code} onChange={setCode} placeholder="Paste your verification code" />
+          </label>
+
+          {error ? (
+            <div className="mt-4 flex items-start gap-3 rounded-xl border border-[var(--danger)]/15 bg-[var(--danger-bg)] px-4 py-3 text-[#991b1b]">
+              <WarningIcon />
+              <span className="text-[13px] leading-5 font-semibold">{error}</span>
+            </div>
+          ) : null}
 
           <div className="mt-5 text-[14px] text-[#8b93a4]">
-            Didn&apos;t receive code?{" "}
-            <button type="button" className="font-bold text-[#2760ff]">
-              Resend Code
+            Didn&apos;t receive a code?{" "}
+            <button
+              type="button"
+              onClick={() => void sendCode()}
+              disabled={requesting}
+              className="font-bold text-[#2760ff] disabled:opacity-60"
+            >
+              {requesting ? "Sending…" : "Resend Code"}
             </button>
+          </div>
+
+          <div className="mt-5 rounded-xl border border-[var(--border)] bg-[var(--panel-soft)] px-4 py-3 text-[12px] leading-5 text-[#8b93a4]">
+            📱 Heads up — phone number verification isn&apos;t live yet. Only your email is
+            verified for now; your phone number is stored but unverified.
           </div>
         </div>
 
         <div className="mt-7">
-          <PrimaryButton
-            disabled={!canContinue}
-            onClick={() =>
-              router.push(
-                `/register/${role}/password?email=${encodeURIComponent(email)}`,
-              )
-            }
-          >
-            Continue
+          <PrimaryButton disabled={!canContinue} onClick={() => void handleContinue()}>
+            {verifying ? "Verifying…" : "Continue"}
           </PrimaryButton>
         </div>
       </StepCard>

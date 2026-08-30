@@ -56,7 +56,7 @@ bluerock-web/
 │   │   └── web/                   # Product-facing (logged in) UI
 │   │       ├── AppShell.tsx       # Sidebar + header layout
 │   │       ├── WebAuthProvider.tsx  # Session + login/logout context
-│   │       ├── HomePage.tsx
+│   │       ├── ListingsHome.tsx
 │   │       ├── SearchPage.tsx
 │   │       ├── ListingCard.tsx
 │   │       ├── ListingDetailClient.tsx
@@ -84,7 +84,7 @@ Next.js App Router file-based routing. All routes live under `src/app/*`.
 
 | Path | File | Description |
 |---|---|---|
-| `/` | `app/page.tsx` | Role-dispatched dashboard (LANDLORD→HostDashboard, RENTER/ADMIN→RenterDashboard, signed-out→PublicHome) |
+| `/` | `app/page.tsx` | Role-dispatched: LANDLORD→LandlordDashboard, RENTER/ADMIN/signed-out→ListingsHome (shared discovery screen) |
 | `/search` | `app/search/page.tsx` | Search, filters, stacked listing cards |
 | `/listing/[id]` | `app/listing/[id]/page.tsx` | Detail page with images, amenities, booking widget |
 | `/bookings` | `app/bookings/page.tsx` | Renter booking history |
@@ -100,11 +100,11 @@ Next.js App Router file-based routing. All routes live under `src/app/*`.
 
 ### Role routing
 
-Role dispatch lives in `<DashboardRouter />` (`components/web/DashboardRouter.tsx`) used by `/` plus every `/host/*` route. Rules:
+Role dispatch lives in `<DashboardRouter />` (`components/feature/home/DashboardRouter.tsx`) used by `/` plus every `/host/*` route. Rules:
 
 - **LANDLORD signed in** → landlord routes render full host UI; `/` renders `LandlordDashboard` (revenue KPIs, listing rows, booking/payout summaries)
-- **RENTER / ADMIN signed in** → `/host/*` routes render a soft "This section is for hosts only" CTA; `/` renders `RenterDashboard` (discovery + featured listings)
-- **Signed out** → `/host/*` shows same host CTA; `/` renders the legacy `HomePage` public discovery panel
+- **RENTER / ADMIN signed in** → `/host/*` routes render a soft "This section is for hosts only" CTA; `/` renders `ListingsHome` — just a curated-category chip row (`All listings` / `Featured` / `New this week`) and a listing grid, no dashboard chrome
+- **Signed out** → `/host/*` shows same host CTA; `/` renders the same `ListingsHome` discovery screen as signed-in renters
 
 The AppShell sidebar nav also switches per role:
 - RENTER/PUBLIC: `Home, Search, Bookings`
@@ -124,20 +124,30 @@ The web is the design anchor for the whole BlueRock product. `bluerock-admin` is
 
 ### 4.1 Color tokens
 
+These are defined in `src/app/globals.css` under `:root` — that file is the source of truth; keep this table in sync with it.
+
 | Token | Value | Usage |
 |---|---|---|
-| `--bg` | `#f5f7ff` | Page background (pale blue wash) |
+| `--bg` | `#eef2f5` | Page background |
 | `--panel` | `#ffffff` | Auth card, content card, sidebar panels |
-| `--panel-2` | `#eef2ff` | Hero/soft surfaces behind forms |
-| `--primary` | `#1d4ed8` | Primary action buttons |
-| `--primary-600` | `#1e40af` | Hover state |
-| `--primary-soft` | `rgba(37,99,235,0.10)` | Pills, chip backgrounds, active nav |
+| `--panel-soft` | `#f7f8fa` | Hero/soft surfaces behind forms, stat tiles |
+| `--sidebar` | `#0A2A8C` | Sidebar background |
+| `--sidebar-hover` | `#0F37A8` | Sidebar item hover |
+| `--sidebar-active` | `#1442C4` | Sidebar item active state |
+| `--primary` | `#1E5BFF` | Primary action buttons |
+| `--primary-600` | `#1849D6` | Hover state |
+| `--primary-soft` | `rgba(30,91,255,0.10)` | Pills, chip backgrounds, active nav |
 | `--accent` | `#0b2466` | Headings, logo, strong text |
 | `--text` | `#111827` | Body text |
 | `--muted` | `#6b7280` | Secondary copy, placeholders, labels |
-| `--border` | `rgba(17,24,39,0.10)` | Hairline card/input borders |
-| `--success` | `#16a34a` · `soft: rgba(22,163,74,0.12)` | Success pills / validations |
-| `--danger` | `#ef4444` · `soft: rgba(239,68,68,0.12)` | Errors, warnings |
+| `--muted-2` | `#9ca3af` | Tertiary copy, faint labels |
+| `--border` | `rgba(17,24,39,0.08)` | Hairline card/input borders |
+| `--border-strong` | `rgba(17,24,39,0.14)` | Emphasized borders |
+| `--success` | `#16a34a` · `soft: rgba(22,163,74,0.12)` · `bg: #f0fdf4` | Success pills / validations — kept visually distinct from `--primary` |
+| `--danger` | `#ef4444` · `soft: rgba(239,68,68,0.12)` · `bg: #fef2f2` | Errors, warnings |
+| `--trend-up` / `--trend-down` | `#1E5BFF` / `#ec4899` | Stat-tile trend indicators |
+
+Prefer referencing these as CSS variables (`var(--primary)`, `bg-[var(--muted)]`, etc.) instead of hardcoding the hex values above inside components — see section 8.
 
 ### 4.2 Typography
 
@@ -206,7 +216,7 @@ Do **not** duplicate auth styling elsewhere. If a new auth screen is needed (e.g
 
 ### 6.2 Product screens
 
-- `HomePage.tsx`: hero + stat tiles + `ListingCard` grid
+- `ListingsHome.tsx`: curated-category chips (`All listings` / `Featured` / `New this week`) + `ListingCard` grid, shared by signed-in renters and signed-out visitors
 - `SearchPage.tsx`: sidebar filters + results list
 - `ListingDetailClient.tsx`: images + host + amenities + booking summary
 - `BookingsPage.tsx`: hero summary + highlighted latest reservation + stacked booking cards

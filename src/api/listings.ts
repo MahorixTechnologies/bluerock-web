@@ -5,7 +5,6 @@ import type {
   ListingUpdateInput,
   PropertyType,
 } from "@/types/models";
-import { mockListings } from "@/constants/mock-data";
 import { apiFetch } from "@/api/client";
 
 export function mapApiListing(raw: unknown): Listing {
@@ -43,6 +42,9 @@ export function mapApiListing(raw: unknown): Listing {
       obj.status === "Published"
         ? obj.status
         : "APPROVED",
+    featured: Boolean(obj.featured),
+    featuredUntil: typeof obj.featuredUntil === "string" ? obj.featuredUntil : undefined,
+    createdAt: typeof obj.createdAt === "string" ? obj.createdAt : undefined,
     host: {
       name: typeof owner.name === "string" ? owner.name : "Host",
       phone: typeof owner.phone === "string" ? owner.phone : undefined,
@@ -163,3 +165,4 @@ export async function deleteListing(id: string, token: string | null) {
     { method: "DELETE", accessToken: token },
   )) as unknown as { success: true; id: string };
 }
+

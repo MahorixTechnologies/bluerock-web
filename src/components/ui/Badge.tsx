@@ -11,11 +11,11 @@ type BadgeProps = {
 };
 
 const variantStyles: Record<BadgeVariant, string> = {
-  primary: "bg-[#E5EEFF] text-[#1E5BFF]",
-  success: "bg-[rgba(16,185,129,0.12)] text-[#10b981]",
+  primary: "bg-[var(--primary-soft)] text-[var(--primary)]",
+  success: "bg-[var(--success-soft)] text-[var(--success)]",
   warning: "bg-[rgba(245,158,11,0.12)] text-[#f59e0b]",
-  danger: "bg-[rgba(239,68,68,0.12)] text-[#ef4444]",
-  soft: "bg-[var(--panel-soft)] text-[#6b7280]",
+  danger: "bg-[var(--danger-soft)] text-[var(--danger)]",
+  soft: "bg-[var(--panel-soft)] text-[var(--muted)]",
 };
 
 export function Badge({ children, variant = "primary", className }: BadgeProps) {

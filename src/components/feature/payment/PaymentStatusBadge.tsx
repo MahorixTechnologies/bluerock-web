@@ -15,8 +15,8 @@ function getStatusConfig(status: PaymentStatus): StatusConfig {
       return {
         label: "Paid",
         pillClass:
-          "bg-[rgba(16,185,129,0.12)] text-[#059669] border border-[rgba(16,185,129,0.2)]",
-        dotClass: "bg-[#10b981]",
+          "bg-[var(--success)]/12 text-[var(--success)] border border-[var(--success)]/20",
+        dotClass: "bg-[var(--success)]",
         icon: (
           <svg
             viewBox="0 0 20 20"
@@ -37,7 +37,7 @@ function getStatusConfig(status: PaymentStatus): StatusConfig {
         label: "Refunded",
         pillClass:
           "bg-[rgba(107,114,128,0.12)] text-[#4b5563] border border-[rgba(107,114,128,0.2)]",
-        dotClass: "bg-[#6b7280]",
+        dotClass: "bg-[var(--muted)]",
         icon: (
           <svg
             viewBox="0 0 20 20"
@@ -86,8 +86,8 @@ function getStatusConfig(status: PaymentStatus): StatusConfig {
       return {
         label: "Failed",
         pillClass:
-          "bg-[rgba(239,68,68,0.12)] text-[#dc2626] border border-[rgba(239,68,68,0.2)]",
-        dotClass: "bg-[#ef4444]",
+          "bg-[var(--danger-soft)] text-[#dc2626] border border-[rgba(239,68,68,0.2)]",
+        dotClass: "bg-[var(--danger)]",
         icon: (
           <svg
             viewBox="0 0 20 20"

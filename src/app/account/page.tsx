@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -9,6 +10,7 @@ import { DashboardRouter } from "@/components/feature/home/DashboardRouter";
 import { useWebAuth } from "@/providers/WebAuthProvider";
 import { BookingStatusBadge } from "@/components/feature/booking/BookingStatusBadge";
 import { fetchMyBookings } from "@/api/bookings";
+import { requestEmailVerification } from "@/api/auth";
 import { updateMe, fetchMe } from "@/api/users";
 import type { WebBooking, WebUserProfile } from "@/types/models";
 import { formatBookingDatesCompact } from "@/constants/booking-status";
@@ -16,9 +18,9 @@ import { formatMoney, initialsFor } from "@/utils";
 
 function RolePill({ role }: { role: WebUserProfile["role"] }) {
   const map = {
-    RENTER: { label: "Guest", className: "bg-[rgba(22,163,74,0.12)] text-[#16a34a]" },
-    LANDLORD: { label: "Host", className: "bg-[rgba(22,163,74,0.12)] text-[#16a34a]" },
-    ADMIN: { label: "Admin", className: "bg-[rgba(22,163,74,0.12)] text-[#16a34a]" },
+    RENTER: { label: "Guest", className: "bg-[var(--success-soft)] text-[var(--success)]" },
+    LANDLORD: { label: "Host", className: "bg-[var(--success-soft)] text-[var(--success)]" },
+    ADMIN: { label: "Admin", className: "bg-[var(--success-soft)] text-[var(--success)]" },
   };
   const meta = map[role];
   return (
@@ -28,25 +30,55 @@ function RolePill({ role }: { role: WebUserProfile["role"] }) {
   );
 }
 
-function VerifiedBadge({ verified }: { verified: boolean }) {
+function VerifiedBadge({ verified, email }: { verified: boolean; email: string }) {
+  const [sending, setSending] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
   if (verified) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-[rgba(22,163,74,0.12)] px-3 py-1.5 text-[11px] font-bold text-[#16a34a]">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--success-soft)] px-3 py-1.5 text-[11px] font-bold text-[var(--success)]">
         ✅ Email verified
       </span>
     );
   }
+
+  async function handleResend() {
+    setSending(true);
+    setNotice(null);
+    try {
+      const result = await requestEmailVerification(email);
+      setNotice(
+        result.emailVerificationToken
+          ? `Demo mode: verification token — ${result.emailVerificationToken}`
+          : "If this email needs verifying, a link has been sent.",
+      );
+    } catch (err) {
+      setNotice(
+        err instanceof Error && err.message === "API_URL not configured"
+          ? "Needs a connected backend (NEXT_PUBLIC_API_URL) to send verification emails."
+          : "Couldn't send a verification email right now.",
+      );
+    } finally {
+      setSending(false);
+    }
+  }
+
   return (
-    <div className="flex items-center gap-2">
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-[rgba(234,179,8,0.12)] px-3 py-1.5 text-[11px] font-bold text-[#ca8a04]">
-        ⚠ Not verified yet
-      </span>
-      <button
-        type="button"
-        className="inline-flex items-center rounded-full border border-[#ca8a04]/30 bg-[rgba(234,179,8,0.08)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#ca8a04] transition hover:bg-[rgba(234,179,8,0.16)]"
-      >
-        Resend
-      </button>
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-2">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-[rgba(234,179,8,0.12)] px-3 py-1.5 text-[11px] font-bold text-[var(--muted-2)]">
+          ⚠ Not verified yet
+        </span>
+        <button
+          type="button"
+          onClick={() => void handleResend()}
+          disabled={sending}
+          className="inline-flex items-center rounded-full border border-[var(--muted-2)]/30 bg-[rgba(234,179,8,0.08)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)] transition hover:bg-[rgba(234,179,8,0.16)] disabled:opacity-60"
+        >
+          {sending ? "Sending…" : "Resend"}
+        </button>
+      </div>
+      {notice ? <p className="text-[11px] font-semibold text-[var(--muted)] break-all">{notice}</p> : null}
     </div>
   );
 }
@@ -69,8 +101,8 @@ function SidebarMenuItem({
       <span
         className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-base transition ${
           active
-            ? "bg-[#16a34a]/15 text-[#16a34a]"
-            : "bg-[#111827]/5 text-[#6b7280]"
+            ? "bg-[var(--success)]/15 text-[var(--success)]"
+            : "bg-[var(--text)]/5 text-[var(--muted)]"
         }`}
       >
         {glyph}
@@ -81,8 +113,8 @@ function SidebarMenuItem({
 
   const baseClasses = `group relative flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-all duration-200 ${
     active
-      ? "bg-[rgba(22,163,74,0.10)] text-[#16a34a]"
-      : "text-[#4b5563] hover:bg-[#111827]/5 hover:text-[#111827]"
+      ? "bg-[rgba(22,163,74,0.10)] text-[var(--success)]"
+      : "text-[#4b5563] hover:bg-[var(--text)]/5 hover:text-[var(--text)]"
   }`;
 
   if (onClick) {
@@ -104,6 +136,7 @@ function ProfilePage() {
   const router = useRouter();
   const { profile, accessToken, logout, refreshUserProfile, status } = useWebAuth();
   const [loadedProfile, setLoadedProfile] = useState<WebUserProfile | null>(null);
+  const [syncedEmail, setSyncedEmail] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
   const [draftPhone, setDraftPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -116,35 +149,44 @@ function ProfilePage() {
   const role = effectiveProfile?.role ?? "RENTER";
   const isLandlord = role === "LANDLORD";
 
+  if (effectiveProfile && effectiveProfile.email !== syncedEmail) {
+    setSyncedEmail(effectiveProfile.email);
+    setDraftName(effectiveProfile.name ?? "");
+    setDraftPhone(effectiveProfile.phone ?? "");
+  }
+
   useEffect(() => {
     if (status !== "signedIn" || !accessToken) return;
+    let cancelled = false;
     void (async () => {
       const fresh = await fetchMe(accessToken);
+      if (cancelled) return;
       if (fresh) {
         setLoadedProfile(fresh);
         refreshUserProfile(fresh);
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [accessToken, status, refreshUserProfile]);
 
   useEffect(() => {
-    if (effectiveProfile) {
-      setDraftName(effectiveProfile.name ?? "");
-      setDraftPhone(effectiveProfile.phone ?? "");
-    }
-  }, [effectiveProfile?.email]);
-
-  useEffect(() => {
     if (status !== "signedIn" || !accessToken) return;
-    setLoadingBookings(true);
+    let cancelled = false;
     void (async () => {
+      if (cancelled) return;
+      setLoadingBookings(true);
       try {
         const result = await fetchMyBookings(accessToken);
-        setBookings(result);
+        if (!cancelled) setBookings(result);
       } finally {
-        setLoadingBookings(false);
+        if (!cancelled) setLoadingBookings(false);
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [accessToken, status]);
 
   async function handleSave(e: React.FormEvent) {
@@ -210,13 +252,13 @@ function ProfilePage() {
         <section className="rounded-3xl border border-[var(--border)] bg-white shadow-[var(--shadow-card)]">
           <div className="flex items-start justify-between gap-4 p-6 pb-2">
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#16a34a]">
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--primary)]">
                 Profile info
               </p>
-              <h2 className="mt-2 text-[22px] font-black tracking-tight text-[#111827]">
+              <h2 className="mt-2 text-[22px] font-black tracking-tight text-[var(--text)]">
                 Your profile
               </h2>
-              <p className="mt-1 text-sm text-[#6b7280]">
+              <p className="mt-1 text-sm text-[var(--muted)]">
                 Manage the information shown on your bookings.
               </p>
             </div>
@@ -225,31 +267,31 @@ function ProfilePage() {
           <form onSubmit={handleSave} className="p-6 pt-4">
             <div className="grid gap-8 lg:grid-cols-[auto_1fr]">
               <div className="flex flex-col items-center lg:items-start">
-                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[#16a34a] to-[#0d4f3b] text-2xl font-black text-white shadow-md">
+                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--sidebar)] text-2xl font-black text-white shadow-md">
                   {initialsFor(effectiveProfile.name || effectiveProfile.email)}
                 </div>
                 <div className="mt-4 text-center lg:text-left">
-                  <p className="font-black text-xl text-[#111827]">
+                  <p className="font-black text-xl text-[var(--text)]">
                     {effectiveProfile.name || effectiveProfile.email.split("@")[0]}
                   </p>
                   <div className="mt-2">
                     <RolePill role={effectiveProfile.role} />
                   </div>
                   <div className="mt-3">
-                    <VerifiedBadge verified={effectiveProfile.emailVerified} />
+                    <VerifiedBadge verified={effectiveProfile.emailVerified} email={effectiveProfile.email} />
                   </div>
                 </div>
               </div>
 
               <div className="space-y-4">
                 {saved ? (
-                  <div className="flex items-start gap-3 rounded-xl border border-[#16a34a]/20 bg-[rgba(22,163,74,0.10)] px-4 py-3 text-[#15803d]">
+                  <div className="flex items-start gap-3 rounded-xl border border-[var(--success)]/20 bg-[rgba(22,163,74,0.10)] px-4 py-3 text-[#15803d]">
                     <span className="text-base">✓</span>
                     <span className="text-sm font-bold">Profile updated</span>
                   </div>
                 ) : null}
                 {error ? (
-                  <div className="flex items-start gap-3 rounded-xl border border-[#ef4444]/15 bg-[#fef2f2] px-4 py-3 text-[#991b1b]">
+                  <div className="flex items-start gap-3 rounded-xl border border-[var(--danger)]/15 bg-[var(--danger-bg)] px-4 py-3 text-[#991b1b]">
                     <span className="text-base">⚠</span>
                     <span className="text-sm font-semibold">{error}</span>
                   </div>
@@ -263,7 +305,7 @@ function ProfilePage() {
                       value={draftName}
                       onChange={(e) => setDraftName(e.target.value)}
                       placeholder="Your full name"
-                      className="mt-2 h-12 w-full rounded-xl border border-[var(--border)] bg-[var(--panel-soft)] px-4 text-sm text-[#111827] outline-none transition-all duration-200 focus:border-[#16a34a] focus:ring-4 focus:ring-[#16a34a]/10"
+                      className="mt-2 h-12 w-full rounded-xl border border-[var(--border)] bg-[var(--panel-soft)] px-4 text-sm text-[var(--text)] outline-none transition-all duration-200 focus:border-[var(--success)] focus:ring-4 focus:ring-[var(--success)]/10"
                     />
                   </label>
                 </div>
@@ -275,7 +317,7 @@ function ProfilePage() {
                       type="email"
                       value={effectiveProfile.email}
                       disabled
-                      className="mt-2 h-12 w-full rounded-xl border border-[var(--border)] bg-[var(--panel-soft)] px-4 text-sm text-[#6b7280] outline-none opacity-80"
+                      className="mt-2 h-12 w-full rounded-xl border border-[var(--border)] bg-[var(--panel-soft)] px-4 text-sm text-[var(--muted)] outline-none opacity-80"
                     />
                   </label>
                 </div>
@@ -288,7 +330,7 @@ function ProfilePage() {
                       value={draftPhone}
                       onChange={(e) => setDraftPhone(e.target.value)}
                       placeholder="+1 555 123 4567"
-                      className="mt-2 h-12 w-full rounded-xl border border-[var(--border)] bg-[var(--panel-soft)] px-4 text-sm text-[#111827] outline-none transition-all duration-200 focus:border-[#16a34a] focus:ring-4 focus:ring-[#16a34a]/10"
+                      className="mt-2 h-12 w-full rounded-xl border border-[var(--border)] bg-[var(--panel-soft)] px-4 text-sm text-[var(--text)] outline-none transition-all duration-200 focus:border-[var(--success)] focus:ring-4 focus:ring-[var(--success)]/10"
                     />
                   </label>
                 </div>
@@ -297,7 +339,7 @@ function ProfilePage() {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="inline-flex h-12 items-center gap-2 rounded-xl bg-[#16a34a] px-5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(22,163,74,0.35)] transition hover:bg-[#15803d] hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0"
+                    className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--success)] px-5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(22,163,74,0.35)] transition hover:bg-[#15803d] hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0"
                   >
                     {submitting ? (
                       <>
@@ -317,23 +359,23 @@ function ProfilePage() {
         <section className="rounded-3xl border border-[var(--border)] bg-white shadow-[var(--shadow-card)]">
           <div className="flex items-center justify-between gap-4 p-6 pb-3">
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#9ca3af]">
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--muted-2)]">
                 Bookings
               </p>
-              <h2 className="mt-2 text-[20px] font-black tracking-tight text-[#111827]">
+              <h2 className="mt-2 text-[20px] font-black tracking-tight text-[var(--text)]">
                 Recent bookings
               </h2>
             </div>
             <Link
               href="/bookings"
-              className="inline-flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-bold text-[#16a34a] transition hover:bg-[rgba(22,163,74,0.08)]"
+              className="inline-flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-bold text-[var(--success)] transition hover:bg-[rgba(22,163,74,0.08)]"
             >
               View all →
             </Link>
           </div>
           <div className="p-6 pt-1">
             {loadingBookings && !recentBookings.length ? (
-              <p className="py-6 text-center text-sm font-semibold text-[#6b7280]">
+              <p className="py-6 text-center text-sm font-semibold text-[var(--muted)]">
                 Loading bookings…
               </p>
             ) : recentBookings.length ? (
@@ -342,31 +384,33 @@ function ProfilePage() {
                   <Link
                     key={booking.id}
                     href={`/bookings/${booking.id}`}
-                    className="flex items-center gap-4 rounded-2xl border border-[var(--border)] bg-[var(--panel-soft)] p-4 transition hover:border-[#16a34a]/30 hover:bg-[rgba(22,163,74,0.04)]"
+                    className="flex items-center gap-4 rounded-2xl border border-[var(--border)] bg-[var(--panel-soft)] p-4 transition hover:border-[var(--success)]/30 hover:bg-[rgba(22,163,74,0.04)]"
                   >
-                    <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl">
+                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl">
                       {booking.image ? (
-                        <img
+                        <Image
                           src={booking.image}
                           alt={booking.listingTitle}
-                          className="h-full w-full object-cover"
+                          fill
+                          sizes="56px"
+                          className="object-cover"
                         />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center rounded-xl bg-[#16a34a]/15 text-lg">
+                        <div className="flex h-full w-full items-center justify-center rounded-xl bg-[var(--success)]/15 text-lg">
                           🏠
                         </div>
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-black text-[#111827]">
+                      <p className="truncate font-black text-[var(--text)]">
                         {booking.listingTitle}
                       </p>
-                      <p className="mt-0.5 text-xs font-semibold text-[#6b7280]">
+                      <p className="mt-0.5 text-xs font-semibold text-[var(--muted)]">
                         {formatBookingDatesCompact(booking.startDate, booking.endDate)}
                       </p>
                     </div>
                     <div className="hidden text-right sm:block">
-                      <p className="font-black text-[#111827]">
+                      <p className="font-black text-[var(--text)]">
                         {formatMoney(booking.total, booking.currency)}
                       </p>
                     </div>
@@ -381,11 +425,11 @@ function ProfilePage() {
               </div>
             ) : (
               <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--panel-soft)] p-8 text-center">
-                <p className="text-sm font-semibold text-[#6b7280]">
+                <p className="text-sm font-semibold text-[var(--muted)]">
                   No trips yet —{" "}
                   <Link
                     href="/search"
-                    className="font-bold text-[#16a34a] transition hover:text-[#15803d]"
+                    className="font-bold text-[var(--success)] transition hover:text-[#15803d]"
                   >
                     Browse stays →
                   </Link>
@@ -397,10 +441,10 @@ function ProfilePage() {
 
         <section className="rounded-3xl border border-[var(--border)] bg-white shadow-[var(--shadow-card)]">
           <div className="p-6 pb-3">
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#9ca3af]">
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--muted-2)]">
               Account
             </p>
-            <h2 className="mt-2 text-[20px] font-black tracking-tight text-[#111827]">
+            <h2 className="mt-2 text-[20px] font-black tracking-tight text-[var(--text)]">
               Session &amp; Security
             </h2>
           </div>
@@ -409,14 +453,14 @@ function ProfilePage() {
               <div className="flex items-center justify-between gap-4 p-4">
                 <div>
                   <p className="font-bold text-[#374151]">Email status</p>
-                  <p className="mt-0.5 text-xs text-[#6b7280]">{effectiveProfile.email}</p>
+                  <p className="mt-0.5 text-xs text-[var(--muted)]">{effectiveProfile.email}</p>
                 </div>
                 {effectiveProfile.emailVerified ? (
-                  <span className="inline-flex items-center rounded-full bg-[rgba(22,163,74,0.12)] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#16a34a]">
+                  <span className="inline-flex items-center rounded-full bg-[var(--success-soft)] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--success)]">
                     ✅ Verified
                   </span>
                 ) : (
-                  <span className="inline-flex items-center rounded-full bg-[rgba(234,179,8,0.12)] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#ca8a04]">
+                  <span className="inline-flex items-center rounded-full bg-[rgba(234,179,8,0.12)] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--muted-2)]">
                     ⚠ Pending
                   </span>
                 )}
@@ -425,16 +469,16 @@ function ProfilePage() {
               <div className="flex items-center justify-between gap-4 p-4">
                 <div>
                   <p className="font-bold text-[#374151]">Password</p>
-                  <p className="mt-0.5 text-xs text-[#6b7280]">
+                  <p className="mt-0.5 text-xs text-[var(--muted)]">
                     Last changed{" "}
-                    <span className="inline-flex items-center rounded-full bg-[#111827]/5 px-2 py-0.5 text-[10px] font-bold text-[#6b7280]">
+                    <span className="inline-flex items-center rounded-full bg-[var(--text)]/5 px-2 py-0.5 text-[10px] font-bold text-[var(--muted)]">
                       unknown (demo)
                     </span>
                   </p>
                 </div>
                 <Link
                   href="/account/security"
-                  className="inline-flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-bold text-[#16a34a] transition hover:bg-[rgba(22,163,74,0.08)]"
+                  className="inline-flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-bold text-[var(--success)] transition hover:bg-[rgba(22,163,74,0.08)]"
                 >
                   Update →
                 </Link>
@@ -443,9 +487,9 @@ function ProfilePage() {
               <div className="flex items-center justify-between gap-4 p-4">
                 <div>
                   <p className="font-bold text-[#374151]">Signed-in session</p>
-                  <p className="mt-0.5 text-xs text-[#6b7280]">
+                  <p className="mt-0.5 text-xs text-[var(--muted)]">
                     Joined{" "}
-                    <span className="inline-flex items-center rounded-full bg-[#111827]/5 px-2 py-0.5 text-[10px] font-bold text-[#6b7280]">
+                    <span className="inline-flex items-center rounded-full bg-[var(--text)]/5 px-2 py-0.5 text-[10px] font-bold text-[var(--muted)]">
                       Active session
                     </span>
                   </p>
@@ -453,7 +497,7 @@ function ProfilePage() {
                 <button
                   type="button"
                   onClick={() => void handleSignOut()}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-[#ef4444]/25 bg-[#fef2f2] px-4 py-2 text-sm font-bold text-[#ef4444] transition hover:border-[#ef4444]/50 hover:bg-[#fee2e2]"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--danger)]/25 bg-[var(--danger-bg)] px-4 py-2 text-sm font-bold text-[var(--danger)] transition hover:border-[var(--danger)]/50 hover:bg-[#fee2e2]"
                 >
                   ↪ Sign out
                 </button>
@@ -471,19 +515,19 @@ function PublicAccountState() {
     <section className="overflow-hidden rounded-3xl border border-[var(--border)] bg-white shadow-[var(--shadow-card)]">
       <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="bg-gradient-to-br from-[#EDF3FF] via-white to-[#F0F5FF] px-8 py-10">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#16a34a]/70">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--success)]/70">
             Account Center
           </p>
-          <h2 className="mt-4 max-w-md text-[30px] font-black tracking-tight text-[#111827]">
+          <h2 className="mt-4 max-w-md text-[30px] font-black tracking-tight text-[var(--text)]">
             Log in to manage your profile
           </h2>
-          <p className="mt-3 max-w-xl text-sm leading-7 text-[#6b7280]">
+          <p className="mt-3 max-w-xl text-sm leading-7 text-[var(--muted)]">
             Sign in to view your bookings, update personal details, and manage security settings.
             Use the demo renter or landlord accounts from the mobile app to explore.
           </p>
           <Link
             href="/login"
-            className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#16a34a] px-6 py-3 text-sm font-bold text-white shadow-[0_8px_20px_rgba(22,163,74,0.35)] transition hover:bg-[#15803d] hover:-translate-y-0.5"
+            className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[var(--success)] px-6 py-3 text-sm font-bold text-white shadow-[0_8px_20px_rgba(22,163,74,0.35)] transition hover:bg-[#15803d] hover:-translate-y-0.5"
           >
             Go to Login →
           </Link>
@@ -494,8 +538,8 @@ function PublicAccountState() {
               label: "Profile",
               value: "Edit & manage",
               icon: "👤",
-              iconBg: "rgba(22,163,74,0.12)",
-              iconColor: "#16a34a",
+              iconBg: "var(--success-soft)",
+              iconColor: "var(--success)",
             },
             {
               label: "Bookings",
@@ -518,10 +562,10 @@ function PublicAccountState() {
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#6b7280]">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted)]">
                     {stat.label}
                   </p>
-                  <p className="mt-3 text-[20px] font-black tracking-tight text-[#111827]">
+                  <p className="mt-3 text-[20px] font-black tracking-tight text-[var(--text)]">
                     {stat.value}
                   </p>
                 </div>

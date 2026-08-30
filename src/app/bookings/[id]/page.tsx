@@ -47,8 +47,8 @@ export default function BookingDetailPage() {
       {loading ? (
         <section className="rounded-2xl border border-[var(--border)] bg-white p-8 shadow-[var(--shadow-card)]">
           <div className="flex items-center justify-center gap-3">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#1E5BFF] border-t-transparent" />
-            <p className="text-sm font-semibold text-[#6b7280]">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--primary)] border-t-transparent" />
+            <p className="text-sm font-semibold text-[var(--muted)]">
               Loading booking details…
             </p>
           </div>
@@ -63,17 +63,17 @@ export default function BookingDetailPage() {
           <div className="space-y-6">
             <BookingTimeline booking={booking} />
             <div className="rounded-3xl border border-[var(--border)] bg-[var(--panel-soft)] p-6">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#9ca3af]">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--muted-2)]">
                 Listing info
               </p>
-              <h3 className="mt-2 text-[18px] font-black tracking-tight text-[#111827]">
+              <h3 className="mt-2 text-[18px] font-black tracking-tight text-[var(--text)]">
                 {booking.listingTitle}
               </h3>
               <div className="mt-4 space-y-3">
                 <div className="flex items-start gap-3">
-                  <span className="mt-0.5 text-[#6b7280]">📍</span>
+                  <span className="mt-0.5 text-[var(--muted)]">📍</span>
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#9ca3af]">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">
                       Location
                     </p>
                     <p className="text-sm font-semibold text-[#374151]">
@@ -82,9 +82,9 @@ export default function BookingDetailPage() {
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <span className="mt-0.5 text-[#6b7280]">🏠</span>
+                  <span className="mt-0.5 text-[var(--muted)]">🏠</span>
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#9ca3af]">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">
                       Stay
                     </p>
                     <p className="text-sm font-semibold text-[#374151]">

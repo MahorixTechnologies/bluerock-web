@@ -28,14 +28,14 @@ export function RegistrationTypeStep() {
                   className="flex w-full items-start justify-between gap-4 text-left"
                 >
                   <div>
-                    <h2 className="text-[18px] font-black tracking-tight text-[#1E5BFF]">{content.label}</h2>
-                    <p className="mt-2 max-w-[280px] text-[14px] leading-7 text-[#6b7280]">
+                    <h2 className="text-[18px] font-black tracking-tight text-[var(--primary)]">{content.label}</h2>
+                    <p className="mt-2 max-w-[280px] text-[14px] leading-7 text-[var(--muted)]">
                       {content.description}
                     </p>
                   </div>
                   <span
                     className={`mt-1 shrink-0 transition-colors ${
-                      expanded ? "text-[#0A2A8C]" : "text-[#1E5BFF]"
+                      expanded ? "text-[var(--sidebar)]" : "text-[var(--primary)]"
                     }`}
                   >
                     <ChevronIcon open={expanded} />
@@ -53,7 +53,7 @@ export function RegistrationTypeStep() {
 
                     <Link
                       href={`/register/${role}`}
-                      className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0A2A8C] px-5 text-[14px] font-black text-white shadow-[0_8px_24px_rgba(10,42,140,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#07206E]"
+                      className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--sidebar)] px-5 text-[14px] font-black text-white shadow-[0_8px_24px_rgba(10,42,140,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#07206E]"
                     >
                       {content.cta} →
                     </Link>

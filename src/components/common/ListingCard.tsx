@@ -1,10 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
 
 import type { Listing } from "@/types/models";
 import { formatMoney } from "@/utils";
+import { useSavedListings } from "@/hooks/useSavedListings";
 
 export function ListingCard({
   listing,
@@ -13,7 +14,8 @@ export function ListingCard({
   listing: Listing;
   variant?: "featured" | "list";
 }) {
-  const [saved, setSaved] = useState(false);
+  const { isSaved, toggleSaved } = useSavedListings();
+  const saved = isSaved(listing.id);
   const image = listing.images[0] ?? "";
 
   if (variant === "featured") {
@@ -23,10 +25,12 @@ export function ListingCard({
         className="group relative block min-w-[300px] overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-card-hover)]"
       >
         <div className="relative h-[260px] overflow-hidden">
-          <img
+          <Image
             src={image}
             alt={listing.title}
-            className="h-full w-full object-cover transition duration-700 ease-out group-hover:scale-105"
+            fill
+            sizes="(min-width: 1024px) 300px, 90vw"
+            className="object-cover transition duration-700 ease-out group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#061525]/80 via-[#061525]/30 to-transparent" />
 
@@ -47,11 +51,11 @@ export function ListingCard({
               aria-label="Save listing"
               onClick={(event) => {
                 event.preventDefault();
-                setSaved((current) => !current);
+                toggleSaved(listing.id);
               }}
               className={`flex h-9 w-9 items-center justify-center rounded-full backdrop-blur-md transition-all duration-200 ${
                 saved
-                  ? "bg-[#ef4444] text-white shadow-[0_4px_12px_rgba(239,68,68,0.4)]"
+                  ? "bg-[var(--danger)] text-white shadow-[0_4px_12px_rgba(239,68,68,0.4)]"
                   : "bg-white/20 text-white hover:bg-white/30"
               }`}
             >
@@ -74,9 +78,9 @@ export function ListingCard({
                   🚿 {listing.bathrooms} baths
                 </span>
               </div>
-              <div className="rounded-xl bg-white px-4 py-2 text-sm font-black text-[#111827] shadow-[0_6px_16px_rgba(0,0,0,0.12)]">
+              <div className="rounded-xl bg-white px-4 py-2 text-sm font-black text-[var(--text)] shadow-[0_6px_16px_rgba(0,0,0,0.12)]">
                 {formatMoney(listing.pricePerNight, listing.currency)}
-                <span className="ml-1 text-[11px] font-semibold text-[#6b7280]">
+                <span className="ml-1 text-[11px] font-semibold text-[var(--muted)]">
                   /night
                 </span>
               </div>
@@ -94,29 +98,31 @@ export function ListingCard({
     >
       <div className="grid gap-0 sm:grid-cols-[200px_1fr]">
         <div className="relative h-[200px] overflow-hidden sm:h-full">
-          <img
+          <Image
             src={image}
             alt={listing.title}
-            className="h-full w-full object-cover transition duration-700 ease-out group-hover:scale-105"
+            fill
+            sizes="(min-width: 640px) 200px, 100vw"
+            className="object-cover transition duration-700 ease-out group-hover:scale-105"
           />
           <button
             type="button"
             aria-label="Save listing"
             onClick={(event) => {
               event.preventDefault();
-              setSaved((current) => !current);
+              toggleSaved(listing.id);
             }}
             className={`absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-sm shadow transition-all duration-200 ${
               saved
-                ? "bg-[#ef4444] text-white"
-                : "bg-white/92 text-[#6b7280] hover:bg-white"
+                ? "bg-[var(--danger)] text-white"
+                : "bg-white/92 text-[var(--muted)] hover:bg-white"
             }`}
           >
             {saved ? "♥" : "♡"}
           </button>
-          <div className="absolute bottom-3 left-3 rounded-lg bg-white/95 px-3 py-1.5 text-xs font-black text-[#111827] shadow backdrop-blur">
+          <div className="absolute bottom-3 left-3 rounded-lg bg-white/95 px-3 py-1.5 text-xs font-black text-[var(--text)] shadow backdrop-blur">
             {formatMoney(listing.pricePerNight, listing.currency)}
-            <span className="ml-0.5 text-[10px] font-semibold text-[#6b7280]">
+            <span className="ml-0.5 text-[10px] font-semibold text-[var(--muted)]">
               /n
             </span>
           </div>
@@ -125,10 +131,10 @@ export function ListingCard({
         <div className="flex flex-col gap-4 p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h3 className="text-base font-black tracking-tight text-[#111827]">
+              <h3 className="text-base font-black tracking-tight text-[var(--text)]">
                 {listing.title}
               </h3>
-              <p className="mt-1 flex items-center gap-1 text-xs font-medium text-[#6b7280]">
+              <p className="mt-1 flex items-center gap-1 text-xs font-medium text-[var(--muted)]">
                 <span>📍</span> {listing.location}
               </p>
             </div>
@@ -149,7 +155,7 @@ export function ListingCard({
                 </span>
               ))}
             </div>
-            <span className="inline-flex items-center gap-1 text-xs font-bold text-[#1E5BFF] transition-transform duration-200 group-hover:translate-x-0.5">
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--primary)] transition-transform duration-200 group-hover:translate-x-0.5">
               View <span>→</span>
             </span>
           </div>

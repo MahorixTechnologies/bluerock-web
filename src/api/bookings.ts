@@ -22,8 +22,8 @@ export function saveStoredBookings(bookings: WebBooking[]) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings));
 }
 
-function normalizeBooking(raw: any, fallbackImage?: string): WebBooking {
-  const listing = raw?.listing ?? {};
+function normalizeBooking(raw: Record<string, unknown>, fallbackImage?: string): WebBooking {
+  const listing = (raw?.listing ?? {}) as Record<string, unknown>;
   return {
     id: String(raw?.id ?? ""),
     listingId: String(raw?.listingId ?? listing?.id ?? ""),
@@ -54,9 +54,9 @@ function normalizeBooking(raw: any, fallbackImage?: string): WebBooking {
   };
 }
 
-function normalizeOwnerBooking(raw: any): OwnerBooking {
-  const listing = raw?.listing ?? {};
-  const renter = raw?.renter ?? {};
+function normalizeOwnerBooking(raw: Record<string, unknown>): OwnerBooking {
+  const listing = (raw?.listing ?? {}) as Record<string, unknown>;
+  const renter = (raw?.renter ?? {}) as Record<string, unknown>;
   return {
     id: String(raw?.id ?? ""),
     listingId: String(raw?.listingId ?? listing?.id ?? ""),
@@ -99,7 +99,7 @@ export async function fetchMyBookings(accessToken: string | null): Promise<WebBo
   try {
     const raw = await apiFetch("/bookings/me", { accessToken });
     if (!Array.isArray(raw)) return makeMockBookings();
-    return raw.map((r) => normalizeBooking(r));
+    return raw.map((r) => normalizeBooking(r as Record<string, unknown>));
   } catch {
     return makeMockBookings();
   }
@@ -109,7 +109,7 @@ export async function fetchOwnerBookings(accessToken: string | null): Promise<Ow
   try {
     const raw = await apiFetch("/bookings/owner", { accessToken });
     if (!Array.isArray(raw)) return makeMockOwnerBookings();
-    return raw.map((r) => normalizeOwnerBooking(r));
+    return raw.map((r) => normalizeOwnerBooking(r as Record<string, unknown>));
   } catch {
     return makeMockOwnerBookings();
   }
@@ -131,7 +131,7 @@ export async function createBookingOnApi(params: {
         endDate: params.endDate,
       }),
     });
-    return normalizeBooking(raw);
+    return normalizeBooking(raw as Record<string, unknown>);
   } catch {
     return null;
   }
@@ -146,7 +146,7 @@ export async function markBookingPaid(params: {
       accessToken: params.accessToken,
       method: "PATCH",
     });
-    return normalizeBooking(raw);
+    return normalizeBooking(raw as Record<string, unknown>);
   } catch {
     return null;
   }
@@ -163,7 +163,7 @@ export async function decideOwnerBooking(params: {
       method: "PATCH",
       body: JSON.stringify({ decision: params.decision }),
     });
-    return normalizeOwnerBooking(raw);
+    return normalizeOwnerBooking(raw as Record<string, unknown>);
   } catch {
     return null;
   }

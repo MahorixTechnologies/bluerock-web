@@ -13,11 +13,11 @@ export function SectionHeader({ eyebrow, title, action }: SectionHeaderProps) {
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
         {eyebrow ? (
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#10b981]">
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--primary)]">
             {eyebrow}
           </p>
         ) : null}
-        <h3 className="mt-1 text-[20px] font-black tracking-tight text-[#111827]">
+        <h3 className="mt-1 text-[20px] font-black tracking-tight text-[var(--text)]">
           {title}
         </h3>
       </div>

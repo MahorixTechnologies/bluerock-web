@@ -36,8 +36,8 @@ function SidebarNavItem({
       <span
         className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-base ${
           active
-            ? "bg-[#16a34a]/15 text-[#16a34a]"
-            : "bg-[var(--panel-soft)] text-[#6b7280]"
+            ? "bg-[var(--success)]/15 text-[var(--success)]"
+            : "bg-[var(--panel-soft)] text-[var(--muted)]"
         }`}
       >
         {glyph}
@@ -47,8 +47,8 @@ function SidebarNavItem({
   );
   const classes = `group relative flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-all duration-200 ${
     active
-      ? "bg-[rgba(22,163,74,0.10)] text-[#16a34a]"
-      : "text-[#374151] hover:bg-[var(--panel-soft)] hover:text-[#111827]"
+      ? "bg-[rgba(22,163,74,0.10)] text-[var(--success)]"
+      : "text-[#374151] hover:bg-[var(--panel-soft)] hover:text-[var(--text)]"
   }`;
   if (onClick) {
     return (
@@ -92,18 +92,18 @@ function PasswordField({
   return (
     <div>
       <p className="text-sm font-bold text-[#374151]">{label}</p>
-      <div className="mt-2 flex h-12 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--panel-soft)] px-3.5 transition-all duration-200 focus-within:border-[#16a34a] focus-within:ring-4 focus-within:ring-[#16a34a]/10">
+      <div className="mt-2 flex h-12 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--panel-soft)] px-3.5 transition-all duration-200 focus-within:border-[var(--success)] focus-within:ring-4 focus-within:ring-[var(--success)]/10">
         <input
           type={hidden ? "password" : "text"}
           value={value}
           placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
-          className="h-full flex-1 bg-transparent text-sm text-[#111827] outline-none"
+          className="h-full flex-1 bg-transparent text-sm text-[var(--text)] outline-none"
         />
         <button
           type="button"
           onClick={() => setHidden((c) => !c)}
-          className="flex items-center px-1 text-[#6b7280] transition-colors hover:text-[#16a34a]"
+          className="flex items-center px-1 text-[var(--muted)] transition-colors hover:text-[var(--success)]"
           aria-label={hidden ? "Show password" : "Hide password"}
         >
           {hidden ? "👁" : "🙈"}
@@ -115,7 +115,7 @@ function PasswordField({
             <div
               key={i}
               className={`h-1.5 rounded-full transition-colors ${
-                i < strengthSegments ? "bg-[#16a34a]" : "bg-[rgba(17,24,39,0.10)]"
+                i < strengthSegments ? "bg-[var(--success)]" : "bg-[rgba(17,24,39,0.10)]"
               }`}
             />
           ))}
@@ -194,14 +194,14 @@ function SecurityContent() {
         <aside className="space-y-1">
           <div className="rounded-2xl border border-[var(--border)] bg-white p-4 shadow-[var(--shadow-soft)]">
             <div className="flex items-center gap-3 px-2 py-2">
-              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[#16a34a] to-[#0d4f3b] text-[11px] font-black text-white">
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--sidebar)] text-[11px] font-black text-white">
                 {initialsFor(profile?.name || profile?.email || "")}
               </span>
               <div className="min-w-0">
-                <p className="truncate text-sm font-bold text-[#111827]">
+                <p className="truncate text-sm font-bold text-[var(--text)]">
                   {profile?.name || profile?.email}
                 </p>
-                <p className="truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6b7280]">
+                <p className="truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
                   {profile?.role}
                 </p>
               </div>
@@ -209,7 +209,7 @@ function SecurityContent() {
           </div>
 
           <div className="mt-3 rounded-2xl border border-[var(--border)] bg-white p-3 shadow-[var(--shadow-soft)]">
-            <p className="px-3 pb-2 pt-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#6b7280]">
+            <p className="px-3 pb-2 pt-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--muted)]">
               Account
             </p>
             <div className="space-y-1">
@@ -227,7 +227,7 @@ function SecurityContent() {
               />
               <SidebarNavItem href="/bookings" label="Bookings" glyph="📅" />
             </div>
-            <p className="px-3 pb-2 pt-4 text-[11px] font-bold uppercase tracking-[0.16em] text-[#6b7280]">
+            <p className="px-3 pb-2 pt-4 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--muted)]">
               Session
             </p>
             <div className="space-y-1">
@@ -240,19 +240,19 @@ function SecurityContent() {
           <div className="rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-4">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[rgba(22,163,74,0.12)] text-xl text-[#16a34a]">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--success-soft)] text-xl text-[var(--success)]">
                   ✉
                 </span>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#6b7280]">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--muted)]">
                     Email address
                   </p>
-                  <p className="mt-1 text-lg font-black tracking-tight text-[#111827]">
+                  <p className="mt-1 text-lg font-black tracking-tight text-[var(--text)]">
                     Registered email: {profile?.email}
                   </p>
                   <p className="mt-2">
                     {profile?.emailVerified ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-[rgba(22,163,74,0.12)] px-3 py-1 text-xs font-bold text-[#16a34a]">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--success-soft)] px-3 py-1 text-xs font-bold text-[var(--success)]">
                         Verified ✅
                       </span>
                     ) : (
@@ -279,7 +279,7 @@ function SecurityContent() {
               <button
                 type="button"
                 onClick={requestVerify}
-                className="inline-flex h-10 items-center justify-center rounded-xl border border-[var(--border)] bg-white px-4 text-sm font-bold text-[#374151] transition hover:bg-[var(--panel-soft)] hover:text-[#111827]"
+                className="inline-flex h-10 items-center justify-center rounded-xl border border-[var(--border)] bg-white px-4 text-sm font-bold text-[#374151] transition hover:bg-[var(--panel-soft)] hover:text-[var(--text)]"
               >
                 Request verification email
               </button>
@@ -287,10 +287,10 @@ function SecurityContent() {
           </div>
 
           <div className="rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]">
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#6b7280]">
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--muted)]">
               Change password
             </p>
-            <p className="mt-1 text-lg font-black tracking-tight text-[#111827]">
+            <p className="mt-1 text-lg font-black tracking-tight text-[var(--text)]">
               Update your sign-in password
             </p>
 
@@ -338,7 +338,7 @@ function SecurityContent() {
               <div className="pt-2 flex justify-end">
                 <button
                   type="submit"
-                  className="inline-flex h-12 items-center justify-center rounded-xl bg-[#16a34a] px-6 font-bold text-white shadow-[0_8px_24px_rgba(22,163,74,0.35)] transition hover:-translate-y-0.5 hover:bg-[#15803d] hover:shadow-[0_12px_32px_rgba(22,163,74,0.45)]"
+                  className="inline-flex h-12 items-center justify-center rounded-xl bg-[var(--success)] px-6 font-bold text-white shadow-[0_8px_24px_rgba(22,163,74,0.35)] transition hover:-translate-y-0.5 hover:bg-[#15803d] hover:shadow-[0_12px_32px_rgba(22,163,74,0.45)]"
                 >
                   Update password
                 </button>
@@ -349,10 +349,10 @@ function SecurityContent() {
           <div className="rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#6b7280]">
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--muted)]">
                   Active sessions
                 </p>
-                <p className="mt-1 text-lg font-black tracking-tight text-[#111827]">
+                <p className="mt-1 text-lg font-black tracking-tight text-[var(--text)]">
                   Manage devices signed into your account
                 </p>
               </div>
@@ -364,19 +364,19 @@ function SecurityContent() {
             <div className="mt-4 divide-y divide-[var(--border)] rounded-xl border border-[var(--border)]">
               <div className="flex items-center gap-4 px-4 py-4">
                 <span className="relative flex h-3 w-3 shrink-0 items-center justify-center">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#16a34a]/40 opacity-75" />
-                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#16a34a]" />
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--success)]/40 opacity-75" />
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--success)]" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="truncate text-sm font-bold text-[#111827]">
+                    <p className="truncate text-sm font-bold text-[var(--text)]">
                       This device / Current session
                     </p>
-                    <span className="inline-flex items-center rounded-full bg-[rgba(22,163,74,0.12)] px-2 py-0.5 text-[10px] font-bold text-[#16a34a]">
+                    <span className="inline-flex items-center rounded-full bg-[var(--success-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--success)]">
                       ● current
                     </span>
                   </div>
-                  <p className="mt-0.5 text-xs text-[#6b7280]">
+                  <p className="mt-0.5 text-xs text-[var(--muted)]">
                     Signed in a few moments ago · Localhost
                   </p>
                 </div>
@@ -387,7 +387,7 @@ function SecurityContent() {
               <button
                 type="button"
                 disabled
-                className="inline-flex h-10 cursor-not-allowed items-center justify-center rounded-xl bg-[rgba(17,24,39,0.08)] px-4 text-sm font-bold text-[rgba(17,24,39,0.40)]"
+                className="inline-flex h-10 cursor-not-allowed items-center justify-center rounded-xl bg-[var(--border)] px-4 text-sm font-bold text-[rgba(17,24,39,0.40)]"
               >
                 Sign out all other sessions
               </button>
@@ -410,8 +410,8 @@ function SecurityContent() {
             <div className="mt-5 space-y-4">
               <div className="flex items-center justify-between gap-4 rounded-xl border border-[var(--border)] bg-white px-4 py-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-[#111827]">Sign out of account</p>
-                  <p className="mt-0.5 text-xs text-[#6b7280]">
+                  <p className="text-sm font-bold text-[var(--text)]">Sign out of account</p>
+                  <p className="mt-0.5 text-xs text-[var(--muted)]">
                     End your current session on this device.
                   </p>
                 </div>
@@ -426,8 +426,8 @@ function SecurityContent() {
 
               <div className="flex items-center justify-between gap-4 rounded-xl border border-[var(--border)] bg-white px-4 py-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-[#111827]">Delete account?</p>
-                  <p className="mt-0.5 text-xs text-[#6b7280]">
+                  <p className="text-sm font-bold text-[var(--text)]">Delete account?</p>
+                  <p className="mt-0.5 text-xs text-[var(--muted)]">
                     To permanently remove your account,{" "}
                     <span className="font-semibold text-[#374151]">contact support</span>.
                   </p>

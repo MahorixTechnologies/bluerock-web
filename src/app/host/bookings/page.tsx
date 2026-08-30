@@ -21,8 +21,8 @@ function Tile({ label, value, tint, icon }: { label: string; value: string; tint
     <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-card)]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#6b7280]">{label}</p>
-          <p className="mt-2 text-[24px] font-black tracking-tight text-[#111827]">{value}</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted)]">{label}</p>
+          <p className="mt-2 text-[24px] font-black tracking-tight text-[var(--text)]">{value}</p>
         </div>
         <span className="flex h-10 w-10 items-center justify-center rounded-xl text-base" style={{ background: `color-mix(in srgb, ${tint} 12%, transparent)`, color: tint }}>{icon}</span>
       </div>
@@ -47,7 +47,14 @@ export function HostBookingsPage() {
   }, [accessToken]);
 
   useEffect(() => {
-    void load();
+    let cancelled = false;
+    void (async () => {
+      if (cancelled) return;
+      await load();
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [load]);
 
   const summary = useMemo(() => {
@@ -97,11 +104,11 @@ export function HostBookingsPage() {
     <AppShell heading="Guest Bookings" subheading="Approve stays and track check-ins across your listings">
       <div className="space-y-6">
         <section className="grid gap-4 sm:grid-cols-3 xl:grid-cols-5">
-          <Tile label="Total Bookings" value={String(summary.total)} tint="#1E5BFF" icon="📋" />
-          <Tile label="Upcoming" value={String(summary.confirmed + summary.pending)} tint="#1E5BFF" icon="📅" />
+          <Tile label="Total Bookings" value={String(summary.total)} tint="var(--primary)" icon="📋" />
+          <Tile label="Upcoming" value={String(summary.confirmed + summary.pending)} tint="var(--primary)" icon="📅" />
           <Tile label="Pending Approval" value={String(summary.pending)} tint="#ca8a04" icon="⏱" />
           <Tile label="Completed" value={String(summary.completed)} tint="#10b981" icon="✓" />
-          <Tile label="Payout Earning" value={formatMoney(summary.revenue, summary.currency)} tint="#1E5BFF" icon="💵" />
+          <Tile label="Payout Earning" value={formatMoney(summary.revenue, summary.currency)} tint="var(--primary)" icon="💵" />
         </section>
 
         {!bookings.length && !loading ? (
@@ -128,10 +135,10 @@ function RenterRedirect() {
   return (
     <AppShell heading="Guest Bookings" subheading="This section is for hosts only">
       <div className="rounded-2xl border border-[var(--border)] bg-white p-8 text-center shadow-[var(--shadow-card)]">
-        <p className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[rgba(30,91,255,0.12)] text-2xl text-[#1E5BFF]">📅</p>
-        <h2 className="mt-4 text-[22px] font-black tracking-tight text-[#111827]">Looking for your own reservations?</h2>
-        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#6b7280]">As a guest you can view upcoming and past trips on the Bookings page.</p>
-        <Link href="/bookings" className="mt-5 inline-flex h-11 items-center justify-center gap-1 rounded-xl bg-[#1E5BFF] px-5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(30,91,255,0.35)] transition hover:bg-[#1849D6]">Open My Bookings →</Link>
+        <p className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[rgba(30,91,255,0.12)] text-2xl text-[var(--primary)]">📅</p>
+        <h2 className="mt-4 text-[22px] font-black tracking-tight text-[var(--text)]">Looking for your own reservations?</h2>
+        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[var(--muted)]">As a guest you can view upcoming and past trips on the Bookings page.</p>
+        <Link href="/bookings" className="mt-5 inline-flex h-11 items-center justify-center gap-1 rounded-xl bg-[var(--primary)] px-5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(30,91,255,0.35)] transition hover:bg-[var(--primary-600)]">Open My Bookings →</Link>
       </div>
     </AppShell>
   );
