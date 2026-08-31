@@ -9,7 +9,12 @@ import {
   type ReactNode,
 } from "react";
 
+import { API_URL } from "@/api/config";
+import { onUnauthorized } from "@/api/client";
+import { fetchMe } from "@/api/users";
 import type { WebUserProfile } from "@/types/models";
+
+export { API_URL };
 
 type AuthStatus = "loading" | "signedOut" | "signedIn";
 
@@ -48,8 +53,6 @@ type DemoAccount = {
 };
 
 const SESSION_KEY = "bluerock.web.session.v2";
-const _API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "") ?? "";
-export const API_URL = _API_BASE ? `${_API_BASE}/api/v1` : "";
 
 const demoAccounts: DemoAccount[] = [
   {
@@ -105,42 +108,46 @@ function readStoredSession(): StoredSession | null {
 async function loginWithApi({
   email,
   password,
-}: LoginParams): Promise<{ profile: WebUserProfile; accessToken: string } | null> {
-  if (!API_URL) return null;
+}: LoginParams): Promise<{ profile: WebUserProfile; accessToken: string }> {
+  const response = await fetch(`${API_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
 
-  try {
-    const response = await fetch(`${API_URL}/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+  const envelope = (await response.json().catch(() => null)) as Record<string, unknown> | null;
+  const payload = (envelope?.success === true ? envelope.data : envelope) as
+    | Record<string, unknown>
+    | undefined;
 
-    if (!response.ok) return null;
-    const envelope = (await response.json()) as Record<string, unknown>;
-    const payload = (envelope?.success === true ? envelope.data : envelope) as Record<string, unknown> | undefined;
-    if (!payload || typeof payload !== "object") return null;
-    const accessToken =
-      typeof payload.accessToken === "string" ? payload.accessToken : "";
-    const user = payload.user;
-    if (!user || typeof user !== "object" || !("email" in user)) return null;
-    const data = user as Record<string, unknown>;
-
-    return {
-      accessToken,
-      profile: {
-        email: String(data.email),
-        name: typeof data.name === "string" ? data.name : "",
-        phone: typeof data.phone === "string" ? data.phone : "",
-        emailVerified: Boolean(data.emailVerified),
-        role:
-          data.role === "ADMIN" || data.role === "LANDLORD" || data.role === "RENTER"
-            ? data.role
-            : "RENTER",
-      },
-    };
-  } catch {
-    return null;
+  if (!response.ok) {
+    const message = typeof payload?.message === "string" ? payload.message : undefined;
+    throw new Error(message ?? `Login failed (${response.status})`);
   }
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Login response was empty.");
+  }
+
+  const accessToken = typeof payload.accessToken === "string" ? payload.accessToken : "";
+  const user = payload.user;
+  if (!accessToken || !user || typeof user !== "object" || !("email" in user)) {
+    throw new Error("Login response was missing an account.");
+  }
+  const data = user as Record<string, unknown>;
+
+  return {
+    accessToken,
+    profile: {
+      email: String(data.email),
+      name: typeof data.name === "string" ? data.name : "",
+      phone: typeof data.phone === "string" ? data.phone : "",
+      emailVerified: Boolean(data.emailVerified),
+      role:
+        data.role === "ADMIN" || data.role === "LANDLORD" || data.role === "RENTER"
+          ? data.role
+          : "RENTER",
+    },
+  };
 }
 
 async function registerWithApi(
@@ -215,6 +222,36 @@ export function WebAuthProvider({ children }: { children: ReactNode }) {
     }
   }, [session]);
 
+  useEffect(() => {
+    return onUnauthorized(() => {
+      try {
+        window.localStorage.removeItem(SESSION_KEY);
+      } catch {
+        // ignore
+      }
+      setSession(null);
+      setStatus("signedOut");
+    });
+  }, []);
+
+  // Confirm a restored (real, non-demo) session's token is still valid and
+  // the user is still ACTIVE — a 401 here flows through the handler above
+  // and signs the user out. Demo sessions have no backend to check against
+  // and are skipped so they never get invalidated by a real API's 401.
+  useEffect(() => {
+    if (!API_URL || !session || session.accessToken.startsWith("demo.")) return;
+    let cancelled = false;
+    void (async () => {
+      const fresh = await fetchMe(session.accessToken);
+      if (cancelled || !fresh) return;
+      setSession((prev) => (prev ? { ...prev, profile: fresh } : prev));
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.accessToken]);
+
   const value = useMemo<WebAuthContextValue>(() => {
     return {
       status,
@@ -223,25 +260,27 @@ export function WebAuthProvider({ children }: { children: ReactNode }) {
       login: async ({ email, password }) => {
         setStatus("loading");
 
-        const apiResult = await loginWithApi({ email, password });
-        let next: StoredSession | null = null;
-        if (apiResult) {
-          next = { profile: apiResult.profile, accessToken: apiResult.accessToken };
-        } else {
-          const demoProfile = loginWithDemo({ email, password });
-          if (demoProfile) {
-            next = { profile: demoProfile, accessToken: `demo.${demoProfile.role}.${btoa(demoProfile.email)}` };
+        try {
+          let next: StoredSession;
+          if (API_URL) {
+            const result = await loginWithApi({ email, password });
+            next = { profile: result.profile, accessToken: result.accessToken };
+          } else {
+            const demoProfile = loginWithDemo({ email, password });
+            if (!demoProfile) {
+              throw new Error("Invalid credentials. Use the seeded mobile demo accounts.");
+            }
+            next = {
+              profile: demoProfile,
+              accessToken: `demo.${demoProfile.role}.${btoa(demoProfile.email)}`,
+            };
           }
-        }
-
-        if (!next) {
-          setSession(null);
+          setSession(next);
+          setStatus("signedIn");
+        } catch (err) {
           setStatus("signedOut");
-          throw new Error("Invalid credentials. Use the seeded mobile demo accounts.");
+          throw err;
         }
-
-        setSession(next);
-        setStatus("signedIn");
       },
       register: async (params) => {
         setStatus("loading");

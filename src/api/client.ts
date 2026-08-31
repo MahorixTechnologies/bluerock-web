@@ -1,4 +1,28 @@
-import { API_URL } from "@/providers/WebAuthProvider";
+import { API_URL } from "@/api/config";
+
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
+type UnauthorizedListener = () => void;
+const unauthorizedListeners = new Set<UnauthorizedListener>();
+
+/**
+ * Lets WebAuthProvider react to a 401 from anywhere in the app (an expired
+ * or invalid token, or a user the backend no longer considers ACTIVE)
+ * without api/client.ts importing the provider back — avoids a circular
+ * import, since WebAuthProvider needs to import this module to subscribe.
+ */
+export function onUnauthorized(listener: UnauthorizedListener): () => void {
+  unauthorizedListeners.add(listener);
+  return () => unauthorizedListeners.delete(listener);
+}
 
 function unwrapEnvelope(payload: unknown) {
   if (payload && typeof payload === "object" && "success" in payload) {
@@ -46,7 +70,10 @@ export async function apiFetch(
         // ignore
       }
     }
-    throw new Error(message);
+    if (res.status === 401) {
+      unauthorizedListeners.forEach((listener) => listener());
+    }
+    throw new ApiError(message, res.status);
   }
   if (!isJson) return undefined;
   const body = (await res.json()) as unknown;
