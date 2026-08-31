@@ -13,7 +13,8 @@ import {
   StepHeader,
 } from "../AuthElements";
 import { AuthShell } from "../AuthShell";
-import { CheckBadge } from "../icons";
+import { CheckBadge, WarningIcon } from "../icons";
+import { useWebAuth } from "@/providers/WebAuthProvider";
 
 const passwordRules = [
   { label: "Minimum of 8 characters", test: (value: string) => value.length >= 8 },
@@ -30,19 +31,42 @@ export function PasswordStep({ role }: { role: Role }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const content = getRoleContent(role);
-  const readyState = searchParams.get("ready") === "1";
-  const [password, setPassword] = useState(readyState ? "Password1!" : "********");
-  const [confirmPassword, setConfirmPassword] = useState(
-    readyState ? "Password1!" : "********",
-  );
-  const email = searchParams.get("email") ?? "jsmith@gmail.com";
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { register } = useWebAuth();
+  const email = searchParams.get("email") ?? "";
+  const firstName = searchParams.get("firstName") ?? "";
+  const lastName = searchParams.get("lastName") ?? "";
+  const phone = searchParams.get("phone") ?? "";
   const checks = useMemo(
     () => passwordRules.map((rule) => ({ ...rule, passed: rule.test(password) })),
     [password],
   );
-  const canContinue = checks.every((rule) => rule.passed) && confirmPassword === password;
+  const canContinue =
+    checks.every((rule) => rule.passed) && confirmPassword === password && !submitting;
 
   if (!content) return null;
+
+  async function handleContinue() {
+    setSubmitting(true);
+    setError(null);
+    try {
+      await register({
+        name: `${firstName} ${lastName}`.trim(),
+        email,
+        password,
+        phone: phone ? `+234${phone}` : undefined,
+        role: role === "homeowner" ? "LANDLORD" : "RENTER",
+      });
+      router.push(`/register/${role}/verify?email=${encodeURIComponent(email)}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not create your account.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
     <AuthShell>
@@ -50,7 +74,7 @@ export function PasswordStep({ role }: { role: Role }) {
         <StepHeader
           title={content.title}
           intro={content.intro}
-          backHref={`/register/${role}/verify?email=${encodeURIComponent(email)}`}
+          backHref={`/register/${role}`}
         />
 
         <div className="mt-7 border-t border-[#eef1f5] pt-5">
@@ -84,18 +108,18 @@ export function PasswordStep({ role }: { role: Role }) {
               hidden
             />
           </label>
+
+          {error ? (
+            <div className="mt-4 flex items-start gap-3 rounded-xl border border-[var(--danger)]/15 bg-[var(--danger-bg)] px-4 py-3 text-[#991b1b]">
+              <WarningIcon />
+              <span className="text-[13px] leading-5 font-semibold">{error}</span>
+            </div>
+          ) : null}
         </div>
 
         <div className="mt-7">
-          <PrimaryButton
-            disabled={!canContinue}
-            onClick={() =>
-              router.push(
-                `/register/${role}/success?email=${encodeURIComponent(email)}`,
-              )
-            }
-          >
-            Continue
+          <PrimaryButton disabled={!canContinue} onClick={() => void handleContinue()}>
+            {submitting ? "Creating account…" : "Continue"}
           </PrimaryButton>
         </div>
       </StepCard>

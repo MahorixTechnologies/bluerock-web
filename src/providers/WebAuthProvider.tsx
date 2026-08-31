@@ -18,6 +18,14 @@ type LoginParams = {
   password: string;
 };
 
+type RegisterParams = {
+  name: string;
+  email: string;
+  password: string;
+  phone?: string;
+  role: "RENTER" | "LANDLORD";
+};
+
 type StoredSession = {
   profile: WebUserProfile;
   accessToken: string;
@@ -28,6 +36,7 @@ type WebAuthContextValue = {
   profile: WebUserProfile | null;
   accessToken: string | null;
   login: (params: LoginParams) => Promise<void>;
+  register: (params: RegisterParams) => Promise<void>;
   logout: () => Promise<void>;
   refreshUserProfile: (next: Partial<WebUserProfile>) => void;
 };
@@ -134,6 +143,54 @@ async function loginWithApi({
   }
 }
 
+async function registerWithApi(
+  params: RegisterParams,
+): Promise<{ profile: WebUserProfile; accessToken: string }> {
+  if (!API_URL) {
+    throw new Error("API_URL not configured");
+  }
+
+  const response = await fetch(`${API_URL}/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+
+  const envelope = (await response.json().catch(() => null)) as Record<string, unknown> | null;
+  const payload = (envelope?.success === true ? envelope.data : envelope) as
+    | Record<string, unknown>
+    | undefined;
+
+  if (!response.ok) {
+    const message = typeof payload?.message === "string" ? payload.message : undefined;
+    throw new Error(message ?? `Registration failed (${response.status})`);
+  }
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Registration response was empty.");
+  }
+
+  const accessToken = typeof payload.accessToken === "string" ? payload.accessToken : "";
+  const user = payload.user;
+  if (!accessToken || !user || typeof user !== "object" || !("email" in user)) {
+    throw new Error("Registration response was missing an account.");
+  }
+  const data = user as Record<string, unknown>;
+
+  return {
+    accessToken,
+    profile: {
+      email: String(data.email),
+      name: typeof data.name === "string" ? data.name : params.name,
+      phone: typeof data.phone === "string" ? data.phone : params.phone ?? "",
+      emailVerified: Boolean(data.emailVerified),
+      role:
+        data.role === "ADMIN" || data.role === "LANDLORD" || data.role === "RENTER"
+          ? data.role
+          : params.role,
+    },
+  };
+}
+
 function loginWithDemo({ email, password }: LoginParams) {
   const normalized = email.trim().toLowerCase();
   const match = demoAccounts.find(
@@ -185,6 +242,33 @@ export function WebAuthProvider({ children }: { children: ReactNode }) {
 
         setSession(next);
         setStatus("signedIn");
+      },
+      register: async (params) => {
+        setStatus("loading");
+
+        try {
+          let next: StoredSession;
+          if (API_URL) {
+            const result = await registerWithApi(params);
+            next = { profile: result.profile, accessToken: result.accessToken };
+          } else {
+            next = {
+              profile: {
+                email: params.email.trim().toLowerCase(),
+                name: params.name,
+                phone: params.phone ?? "",
+                emailVerified: false,
+                role: params.role,
+              },
+              accessToken: `dev.${Date.now()}`,
+            };
+          }
+          setSession(next);
+          setStatus("signedIn");
+        } catch (err) {
+          setStatus("signedOut");
+          throw err;
+        }
       },
       logout: async () => {
         try {

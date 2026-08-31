@@ -101,11 +101,15 @@ export function RegistrationDetailsStep({ role }: { role: Role }) {
         <div className="mt-6 space-y-4">
           <PrimaryButton
             disabled={!canContinue}
-            onClick={() =>
-              router.push(
-                `/register/${role}/verify?email=${encodeURIComponent(email.trim())}`,
-              )
-            }
+            onClick={() => {
+              const params = new URLSearchParams({
+                email: email.trim(),
+                firstName: firstName.trim(),
+                lastName: lastName.trim(),
+                phone: phone.trim(),
+              });
+              router.push(`/register/${role}/password?${params.toString()}`);
+            }}
           >
             Continue
           </PrimaryButton>
