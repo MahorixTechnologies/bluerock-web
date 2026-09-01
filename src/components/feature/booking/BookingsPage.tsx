@@ -9,9 +9,9 @@ import {
   BookingStatusBadge,
   EmptyBookingsState,
 } from "@/components/feature/booking";
-import { fetchMyBookings, getStoredBookings } from "@/api/bookings";
+import { cancelBooking, fetchMyBookings } from "@/api/bookings";
 import type { WebBooking } from "@/types/models";
-import { isRefundEligible, issueRefund } from "@/api/payments";
+import { isRefundEligible } from "@/api/payments";
 import { formatMoney } from "@/utils";
 
 import { AppShell } from "@/components/layout/AppShell";
@@ -246,22 +246,22 @@ export function BookingsPage() {
   const { status, accessToken } = useWebAuth();
   const [bookings, setBookings] = useState<WebBooking[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const [refundingId, setRefundingId] = useState<string | null>(null);
+  const [refundError, setRefundError] = useState<string | null>(null);
   const [refundConfirmOpen, setRefundConfirmOpen] = useState(false);
   const [refundBooking, setRefundBooking] = useState<WebBooking | null>(null);
 
   const loadBookings = useCallback(async () => {
     if (status !== "signedIn") return;
     setLoading(true);
+    setLoadError(null);
     try {
       const remote = await fetchMyBookings(accessToken);
-      if (remote && remote.length) {
-        setBookings(remote);
-        return;
-      }
-      const local = getStoredBookings();
-      setBookings(local);
+      setBookings(remote);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : "Failed to load bookings");
     } finally {
       setLoading(false);
     }
@@ -446,13 +446,16 @@ export function BookingsPage() {
   async function handleConfirmRefund() {
     if (!refundBooking) return;
     setRefundingId(refundBooking.id);
+    setRefundError(null);
     try {
-      issueRefund(refundBooking.id, "Guest cancellation requested");
+      await cancelBooking({ accessToken, bookingId: refundBooking.id });
       await loadBookings();
-    } finally {
-      setRefundingId(null);
       setRefundConfirmOpen(false);
       setRefundBooking(null);
+    } catch (err) {
+      setRefundError(err instanceof Error ? err.message : "Failed to request refund");
+    } finally {
+      setRefundingId(null);
     }
   }
 
@@ -466,6 +469,20 @@ export function BookingsPage() {
           <p className="text-sm font-semibold text-[var(--muted)]">
             Loading your bookings…
           </p>
+        </section>
+      ) : null}
+
+      {loadError ? (
+        <section className="rounded-2xl border border-[var(--danger)]/20 bg-[var(--danger-bg)] p-6">
+          <p className="text-sm font-bold text-[var(--danger)]">⚠ Couldn&apos;t load your bookings</p>
+          <p className="mt-1 text-sm text-[var(--muted)]">{loadError}</p>
+          <button
+            type="button"
+            onClick={() => void loadBookings()}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-xs font-bold text-[var(--text)] shadow-sm transition hover:bg-[var(--panel-soft)]"
+          >
+            Try again
+          </button>
         </section>
       ) : null}
 
@@ -605,12 +622,18 @@ export function BookingsPage() {
                   </p>
                 </div>
               </div>
+
+              {refundError ? (
+                <p className="mt-3 text-xs font-bold text-[var(--danger)]">⚠ {refundError}</p>
+              ) : null}
+
               <div className="mt-6 flex flex-wrap items-center justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => {
                     setRefundConfirmOpen(false);
                     setRefundBooking(null);
+                    setRefundError(null);
                   }}
                   className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border)] bg-white px-4 py-2.5 text-xs font-bold text-[#374151] transition hover:bg-[var(--panel-soft)]"
                 >

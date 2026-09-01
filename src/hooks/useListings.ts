@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { PropertyType } from "@/types/models";
-import { mockListings } from "@/constants/mock-data";
 import { apiFetch } from "@/api/client";
 import { mapApiListing } from "@/api/listings";
 
@@ -20,9 +19,7 @@ type UseListingsParams = {
 
 export function useListings(params: UseListingsParams) {
   const { q, location, minPrice, maxPrice, type, rooms, token, scope = "public" } = params;
-  const [data, setData] = useState<Listing[]>(() =>
-    scope === "public" ? mockListings : [],
-  );
+  const [data, setData] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,35 +41,15 @@ export function useListings(params: UseListingsParams) {
       setData([]);
       return;
     }
-    if (!token && scope === "mine") {
-      setData([]);
-      return;
-    }
     setLoading(true);
     setError(null);
     try {
-      if (scope === "mine") {
-        if (!process.env.NEXT_PUBLIC_API_URL) {
-          setData(mockListings);
-          setLoading(false);
-          return;
-        }
-        const raw = (await apiFetch(url, { accessToken: token })) as unknown[];
-        const mapped = Array.isArray(raw) ? raw.map(mapApiListing) : [];
-        setData(mapped.length ? mapped : mockListings);
-      } else {
-        if (!process.env.NEXT_PUBLIC_API_URL) {
-          setData(mockListings);
-          setLoading(false);
-          return;
-        }
-        const raw = (await apiFetch(url, { accessToken: token })) as unknown[];
-        const mapped = Array.isArray(raw) ? raw.map(mapApiListing) : [];
-        setData(mapped.length ? mapped : mockListings);
-      }
+      const raw = (await apiFetch(url, { accessToken: token })) as unknown[];
+      const mapped = Array.isArray(raw) ? raw.map(mapApiListing) : [];
+      setData(mapped);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load listings");
-      if (scope === "public") setData(mockListings);
+      setData([]);
     } finally {
       setLoading(false);
     }
@@ -109,18 +86,12 @@ export function useListing(id: string | null, token?: string | null) {
       setLoading(true);
       setError(null);
       try {
-        if (!process.env.NEXT_PUBLIC_API_URL) {
-          const found = mockListings.find((l) => l.id === id) ?? mockListings[0] ?? null;
-          if (!cancelled) setData(found);
-          return;
-        }
         const raw = (await apiFetch(`/listings/${id}`, { accessToken: token })) as unknown;
         if (!cancelled) setData(raw ? mapApiListing(raw) : null);
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "Failed to load listing");
-          const found = mockListings.find((l) => l.id === id) ?? null;
-          if (found) setData(found);
+          setData(null);
         }
       } finally {
         if (!cancelled) setLoading(false);

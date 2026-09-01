@@ -59,6 +59,11 @@ export function getPaymentStatusMeta(
         label: "Paid",
         badgeClass: "bg-[rgba(16,185,129,0.12)] text-[#10b981]",
       };
+    case "REFUND_PENDING":
+      return {
+        label: "Refund pending",
+        badgeClass: "bg-[rgba(234,179,8,0.12)] text-[#ca8a04]",
+      };
     case "REFUNDED":
       return {
         label: "Refunded",

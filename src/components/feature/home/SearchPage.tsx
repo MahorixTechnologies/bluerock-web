@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 
 import { useListings } from "@/hooks/useListings";
-import { mockListings } from "@/constants/mock-data";
 import { ALL_PROPERTY_TYPES, type PropertyType } from "@/types/models";
 
 import { AppShell } from "@/components/layout/AppShell";
@@ -31,7 +30,7 @@ export function SearchPage() {
     };
   }, [maxPrice, minPrice, rooms]);
 
-  const { data: listings = mockListings } = useListings({
+  const { data: listings, loading: listingsLoading, error: listingsError } = useListings({
     q: query,
     location,
     minPrice: parsed.minPrice,
@@ -162,7 +161,19 @@ export function SearchPage() {
           </div>
         </div>
 
-        {listings.length ? (
+        {listingsError ? (
+          <div className="rounded-2xl border border-[var(--danger)]/20 bg-[var(--danger-bg)] p-12 text-center shadow-[var(--shadow-card)]">
+            <span className="flex mx-auto h-16 w-16 items-center justify-center rounded-2xl bg-white text-3xl">
+              ⚠
+            </span>
+            <p className="mt-5 text-lg font-black text-[var(--text)]">Couldn&apos;t load listings</p>
+            <p className="mt-2 text-sm text-[var(--muted)]">{listingsError}</p>
+          </div>
+        ) : listingsLoading ? (
+          <div className="rounded-2xl border border-[var(--border)] bg-white p-12 text-center shadow-[var(--shadow-card)]">
+            <p className="text-sm font-semibold text-[var(--muted)]">Loading listings…</p>
+          </div>
+        ) : listings.length ? (
           <div className="grid gap-5 md:grid-cols-2">
             {listings.map((listing) => (
               <ListingCard key={listing.id} listing={listing} variant="list" />

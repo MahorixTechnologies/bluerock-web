@@ -36,11 +36,16 @@ export function HostBookingsPage() {
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<FilterKey>("All");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [decideError, setDecideError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       setBookings(await fetchOwnerBookings(accessToken));
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : "Failed to load bookings");
     } finally {
       setLoading(false);
     }
@@ -83,18 +88,12 @@ export function HostBookingsPage() {
 
   async function handleDecide(id: string, decision: "ACCEPT" | "REJECT") {
     setBusyId(id);
+    setDecideError(null);
     try {
       const updated = await decideOwnerBooking({ accessToken, bookingId: id, decision });
-      setBookings((prev) =>
-        prev.map((b) => {
-          if (b.id !== id) return b;
-          if (updated) return updated;
-          return {
-            ...b,
-            status: decision === "ACCEPT" ? "CONFIRMED" : "REJECTED",
-          };
-        }),
-      );
+      setBookings((prev) => prev.map((b) => (b.id === id ? updated : b)));
+    } catch (err) {
+      setDecideError(err instanceof Error ? err.message : "Failed to update booking");
     } finally {
       setBusyId(null);
     }
@@ -110,6 +109,12 @@ export function HostBookingsPage() {
           <Tile label="Completed" value={String(summary.completed)} tint="#10b981" icon="✓" />
           <Tile label="Payout Earning" value={formatMoney(summary.revenue, summary.currency)} tint="var(--primary)" icon="💵" />
         </section>
+
+        {loadError || decideError ? (
+          <div className="rounded-2xl border border-[var(--danger)]/20 bg-[var(--danger-bg)] p-4">
+            <p className="text-sm font-bold text-[var(--danger)]">⚠ {loadError ?? decideError}</p>
+          </div>
+        ) : null}
 
         {!bookings.length && !loading ? (
           <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-[var(--shadow-card)]">

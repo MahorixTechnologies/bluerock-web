@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { useWebAuth } from "@/providers/WebAuthProvider";
-import { createBookingFromListing, createBookingOnApi } from "@/api/bookings";
+import { createBookingOnApi } from "@/api/bookings";
 import type { Listing } from "@/types/models";
 import { diffNights, formatMoney, initialsFor, parseDate } from "@/utils";
 
@@ -342,21 +342,12 @@ export function ListingDetailClient({ listing }: { listing: Listing }) {
 
                   try {
                     setBusy(true);
-                    if (process.env.NEXT_PUBLIC_API_URL) {
-                      const newBooking = await createBookingOnApi({
-                        accessToken,
-                        listingId: listing.id,
-                        startDate,
-                        endDate,
-                      });
-                      if (!newBooking) {
-                        setError("We couldn't create your booking. Please try again.");
-                        return;
-                      }
-                      router.push(`/pay/${newBooking.id}`);
-                      return;
-                    }
-                    const newBooking = createBookingFromListing({ listing, startDate, endDate });
+                    const newBooking = await createBookingOnApi({
+                      accessToken,
+                      listingId: listing.id,
+                      startDate,
+                      endDate,
+                    });
                     router.push(`/pay/${newBooking.id}`);
                   } catch (err) {
                     setError(err instanceof Error ? err.message : "Booking failed.");

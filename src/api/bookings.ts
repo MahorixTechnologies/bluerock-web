@@ -1,26 +1,7 @@
 "use client";
 
-import type { Listing, WebBooking, OwnerBooking } from "@/types/models";
-import { diffNights, parseDate } from "@/utils";
-import { makeMockBookings, makeMockOwnerBookings } from "@/constants/mock-bookings";
+import type { WebBooking, OwnerBooking } from "@/types/models";
 import { apiFetch } from "@/api/client";
-
-const STORAGE_KEY = "bluerock.web.bookings.v1";
-
-export function getStoredBookings(): WebBooking[] {
-  if (typeof window === "undefined") return [] as WebBooking[];
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as WebBooking[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-export function saveStoredBookings(bookings: WebBooking[]) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings));
-}
 
 function normalizeBooking(raw: Record<string, unknown>, fallbackImage?: string): WebBooking {
   const listing = (raw?.listing ?? {}) as Record<string, unknown>;
@@ -47,7 +28,9 @@ function normalizeBooking(raw: Record<string, unknown>, fallbackImage?: string):
         ? raw.status
         : "PENDING",
     paymentStatus:
-      raw?.paymentStatus === "PAID" || raw?.paymentStatus === "REFUNDED"
+      raw?.paymentStatus === "PAID" ||
+      raw?.paymentStatus === "REFUND_PENDING" ||
+      raw?.paymentStatus === "REFUNDED"
         ? raw.paymentStatus
         : "UNPAID",
     createdAt: String(raw?.createdAt ?? new Date().toISOString()),
@@ -75,7 +58,9 @@ function normalizeOwnerBooking(raw: Record<string, unknown>): OwnerBooking {
         ? raw.status
         : "PENDING",
     paymentStatus:
-      raw?.paymentStatus === "PAID" || raw?.paymentStatus === "REFUNDED"
+      raw?.paymentStatus === "PAID" ||
+      raw?.paymentStatus === "REFUND_PENDING" ||
+      raw?.paymentStatus === "REFUNDED"
         ? raw.paymentStatus
         : "UNPAID",
     createdAt: String(raw?.createdAt ?? new Date().toISOString()),
@@ -96,23 +81,15 @@ function normalizeOwnerBooking(raw: Record<string, unknown>): OwnerBooking {
 }
 
 export async function fetchMyBookings(accessToken: string | null): Promise<WebBooking[]> {
-  try {
-    const raw = await apiFetch("/bookings/me", { accessToken });
-    if (!Array.isArray(raw)) return makeMockBookings();
-    return raw.map((r) => normalizeBooking(r as Record<string, unknown>));
-  } catch {
-    return makeMockBookings();
-  }
+  const raw = await apiFetch("/bookings/me", { accessToken });
+  if (!Array.isArray(raw)) return [];
+  return raw.map((r) => normalizeBooking(r as Record<string, unknown>));
 }
 
 export async function fetchOwnerBookings(accessToken: string | null): Promise<OwnerBooking[]> {
-  try {
-    const raw = await apiFetch("/bookings/owner", { accessToken });
-    if (!Array.isArray(raw)) return makeMockOwnerBookings();
-    return raw.map((r) => normalizeOwnerBooking(r as Record<string, unknown>));
-  } catch {
-    return makeMockOwnerBookings();
-  }
+  const raw = await apiFetch("/bookings/owner", { accessToken });
+  if (!Array.isArray(raw)) return [];
+  return raw.map((r) => normalizeOwnerBooking(r as Record<string, unknown>));
 }
 
 export async function createBookingOnApi(params: {
@@ -120,95 +97,45 @@ export async function createBookingOnApi(params: {
   listingId: string;
   startDate: string;
   endDate: string;
-}): Promise<WebBooking | null> {
-  try {
-    const raw = await apiFetch("/bookings", {
-      accessToken: params.accessToken,
-      method: "POST",
-      body: JSON.stringify({
-        listingId: params.listingId,
-        startDate: params.startDate,
-        endDate: params.endDate,
-      }),
-    });
-    return normalizeBooking(raw as Record<string, unknown>);
-  } catch {
-    return null;
-  }
-}
-
-export async function markBookingPaid(params: {
-  accessToken: string | null;
-  bookingId: string;
-}): Promise<WebBooking | null> {
-  try {
-    const raw = await apiFetch(`/bookings/${params.bookingId}/pay`, {
-      accessToken: params.accessToken,
-      method: "PATCH",
-    });
-    return normalizeBooking(raw as Record<string, unknown>);
-  } catch {
-    return null;
-  }
+}): Promise<WebBooking> {
+  const raw = await apiFetch("/bookings", {
+    accessToken: params.accessToken,
+    method: "POST",
+    body: JSON.stringify({
+      listingId: params.listingId,
+      startDate: params.startDate,
+      endDate: params.endDate,
+    }),
+  });
+  return normalizeBooking(raw as Record<string, unknown>);
 }
 
 export async function decideOwnerBooking(params: {
   accessToken: string | null;
   bookingId: string;
   decision: "ACCEPT" | "REJECT";
-}): Promise<OwnerBooking | null> {
-  try {
-    const raw = await apiFetch(`/bookings/${params.bookingId}/decision`, {
-      accessToken: params.accessToken,
-      method: "PATCH",
-      body: JSON.stringify({ decision: params.decision }),
-    });
-    return normalizeOwnerBooking(raw as Record<string, unknown>);
-  } catch {
-    return null;
-  }
+}): Promise<OwnerBooking> {
+  const raw = await apiFetch(`/bookings/${params.bookingId}/decision`, {
+    accessToken: params.accessToken,
+    method: "PATCH",
+    body: JSON.stringify({ decision: params.decision }),
+  });
+  return normalizeOwnerBooking(raw as Record<string, unknown>);
 }
 
-export function createBookingFromListing(args: {
-  listing: Listing;
-  startDate: string;
-  endDate: string;
-}) {
-  const start = parseDate(args.startDate);
-  const end = parseDate(args.endDate);
-  if (!start || !end) {
-    throw new Error("Please enter valid dates in YYYY-MM-DD format.");
-  }
-
-  const nights = diffNights(start, end);
-  if (nights <= 0) {
-    throw new Error("Your stay must be at least 1 night.");
-  }
-
-  const subtotal = nights * args.listing.pricePerNight;
-  const serviceFee = Math.round(subtotal * 0.1);
-  const total = subtotal + serviceFee;
-
-  const booking: WebBooking = {
-    id: `web-booking-${Date.now()}`,
-    listingId: args.listing.id,
-    listingTitle: args.listing.title,
-    location: args.listing.location,
-    image: args.listing.images[0] ?? "",
-    currency: args.listing.currency,
-    startDate: args.startDate,
-    endDate: args.endDate,
-    nights,
-    pricePerNight: args.listing.pricePerNight,
-    subtotal,
-    serviceFee,
-    total,
-    status: "PENDING",
-    paymentStatus: "UNPAID",
-    createdAt: new Date().toISOString(),
-  };
-
-  const current = getStoredBookings();
-  saveStoredBookings([booking, ...current]);
-  return booking;
+/**
+ * Cancels a booking. If it was already PAID, the backend flips it to
+ * REFUND_PENDING and the RefundsProcessorJob cron (or its Vercel Cron
+ * equivalent) picks it up and actually moves the money back — there is no
+ * separate "refund" endpoint, cancellation is how a refund is requested.
+ */
+export async function cancelBooking(params: {
+  accessToken: string | null;
+  bookingId: string;
+}): Promise<WebBooking> {
+  const raw = await apiFetch(`/bookings/${params.bookingId}/cancel`, {
+    accessToken: params.accessToken,
+    method: "POST",
+  });
+  return normalizeBooking(raw as Record<string, unknown>);
 }

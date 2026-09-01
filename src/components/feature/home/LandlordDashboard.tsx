@@ -1,60 +1,40 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
-import { mockListings } from "@/constants/mock-data";
+import { fetchOwnerBookings } from "@/api/bookings";
+import { fetchOwnerPayouts, type Payout } from "@/api/payouts";
+import { useListings } from "@/hooks/useListings";
+import type { OwnerBooking } from "@/types/models";
 import { formatMoney } from "@/utils";
+import { useWebAuth } from "@/providers/WebAuthProvider";
 
 import { AppShell } from "@/components/layout/AppShell";
 import { StatCard } from "@/components/ui/StatCard";
 
-type HostStat = {
-  label: string;
-  value: string;
-  trend: number;
-  trendDirection: "up" | "down";
-  delta: string;
-  icon: string;
-  iconBg: string;
-  iconColor: string;
-};
-
-type HostListing = {
-  id: string;
-  title: string;
-  location: string;
-  image: string;
-  pricePerNight: number;
-  currency: "USD" | "NGN";
-  occupancy: number;
-  status: "Active" | "Paused" | "Pending";
-  totalNights: number;
-  totalRevenue: number;
-};
-
-type HostBooking = {
-  id: string;
-  guest: string;
-  listingTitle: string;
-  startDate: string;
-  nights: number;
-  status: "Confirmed" | "Pending" | "Completed";
-  total: number;
-  currency: "USD" | "NGN";
-};
-
-function HostListingRow({ listing }: { listing: HostListing }) {
-  const statusStyle =
-    listing.status === "Active"
-      ? "bg-[var(--trend-up-bg)] text-[var(--trend-up)]"
-      : listing.status === "Paused"
-        ? "bg-[rgba(234,179,8,0.12)] text-[#ca8a04]"
-        : "bg-[rgba(107,114,128,0.12)] text-[var(--muted)]";
+function ListingRow({
+  listing,
+  bookingsForListing,
+}: {
+  listing: { id: string; title: string; location: string; image: string; pricePerNight: number; currency: "USD" | "NGN"; status?: string };
+  bookingsForListing: OwnerBooking[];
+}) {
+  const revenue = bookingsForListing
+    .filter((b) => b.status === "CONFIRMED" || b.status === "COMPLETED")
+    .reduce((sum, b) => sum + b.total, 0);
+  const nights = bookingsForListing
+    .filter((b) => b.status === "CONFIRMED" || b.status === "COMPLETED")
+    .reduce((sum, b) => sum + b.nights, 0);
 
   return (
-    <div className="grid grid-cols-[1.6fr_1.2fr_0.8fr_1fr_1fr] items-center gap-4 border-b border-[var(--border)] px-4 py-4 last:border-b-0 sm:px-6">
+    <div className="grid grid-cols-[1.6fr_1.2fr_0.9fr_1fr] items-center gap-4 border-b border-[var(--border)] px-4 py-4 last:border-b-0 sm:px-6">
       <div className="flex items-center gap-4 min-w-0">
         <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--panel-soft)]">
-          <Image src={listing.image} alt={listing.title} fill sizes="56px" className="object-cover" />
+          {listing.image ? (
+            <Image src={listing.image} alt={listing.title} fill sizes="56px" className="object-cover" />
+          ) : null}
         </div>
         <div className="min-w-0">
           <p className="truncate text-sm font-bold text-[var(--text)]">{listing.title}</p>
@@ -62,91 +42,60 @@ function HostListingRow({ listing }: { listing: HostListing }) {
         </div>
       </div>
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">
-          Rate
-        </p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">Rate</p>
         <p className="mt-1 text-sm font-black tabular-nums text-[var(--text)]">
           {formatMoney(listing.pricePerNight, listing.currency)}
           <span className="ml-1 text-xs font-semibold text-[var(--muted)]">/night</span>
         </p>
       </div>
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">
-          Occupancy
-        </p>
-        <p className="mt-1 text-sm font-black tabular-nums text-[var(--primary)]">
-          {listing.occupancy}%
-        </p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">Booked Nights</p>
+        <p className="mt-1 text-sm font-black tabular-nums text-[var(--primary)]">{nights}</p>
       </div>
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">
-          Booked Nights
-        </p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">Revenue</p>
         <p className="mt-1 text-sm font-black tabular-nums text-[var(--text)]">
-          {listing.totalNights}
+          {formatMoney(revenue, listing.currency)}
         </p>
-      </div>
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">
-            Revenue
-          </p>
-          <p className="mt-1 text-sm font-black tabular-nums text-[var(--text)]">
-            {formatMoney(listing.totalRevenue, listing.currency)}
-          </p>
-        </div>
-        <span
-          className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide uppercase ${statusStyle}`}
-        >
-          {listing.status}
-        </span>
       </div>
     </div>
   );
 }
 
-function HostBookingRow({ booking }: { booking: HostBooking }) {
+function BookingRow({ booking }: { booking: OwnerBooking }) {
   const statusStyle =
-    booking.status === "Confirmed"
+    booking.status === "CONFIRMED"
       ? "bg-[var(--trend-up-bg)] text-[var(--trend-up)]"
-      : booking.status === "Pending"
+      : booking.status === "PENDING"
         ? "bg-[rgba(234,179,8,0.12)] text-[#ca8a04]"
         : "bg-[rgba(107,114,128,0.12)] text-[var(--muted)]";
 
   return (
     <div className="grid grid-cols-[1.4fr_1.4fr_1fr_0.8fr_1fr_0.9fr] items-center gap-4 border-b border-[var(--border)] px-4 py-4 last:border-b-0 sm:px-6">
       <div className="min-w-0">
-        <p className="truncate text-sm font-bold text-[var(--text)]">{booking.guest}</p>
-        <p className="mt-0.5 truncate text-xs text-[var(--muted)]">Booking {booking.id}</p>
+        <p className="truncate text-sm font-bold text-[var(--text)]">
+          {booking.renter.name?.trim() || booking.renter.email}
+        </p>
+        <p className="mt-0.5 truncate text-xs text-[var(--muted)]">Booking {booking.id.slice(0, 8)}</p>
       </div>
       <div className="min-w-0">
-        <p className="truncate text-sm font-semibold text-[var(--text)]">
-          {booking.listingTitle}
-        </p>
-        <p className="mt-0.5 text-xs text-[var(--muted)]">{booking.startDate} · {booking.nights} nights</p>
-      </div>
-      <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">
-          Check-in
-        </p>
-        <p className="mt-1 text-sm font-bold tabular-nums text-[var(--text)]">
-          {booking.startDate}
+        <p className="truncate text-sm font-semibold text-[var(--text)]">{booking.listing.title}</p>
+        <p className="mt-0.5 text-xs text-[var(--muted)]">
+          {booking.startDate} · {booking.nights} nights
         </p>
       </div>
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">
-          Nights
-        </p>
-        <p className="mt-1 text-sm font-black tabular-nums text-[var(--primary)]">
-          {booking.nights}
-        </p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">Check-in</p>
+        <p className="mt-1 text-sm font-bold tabular-nums text-[var(--text)]">{booking.startDate}</p>
       </div>
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">
-          Payout
-        </p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">Nights</p>
+        <p className="mt-1 text-sm font-black tabular-nums text-[var(--primary)]">{booking.nights}</p>
+      </div>
+      <div>
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">Payout</p>
         <p className="mt-1 text-sm font-black tabular-nums text-[var(--text)]">
-          {formatMoney(booking.total, booking.currency)}
+          {formatMoney(booking.total, booking.listing.currency)}
         </p>
       </div>
       <span
@@ -158,158 +107,96 @@ function HostBookingRow({ booking }: { booking: HostBooking }) {
   );
 }
 
-function PayoutHistoryRow({
-  date,
-  label,
-  method,
-  amount,
-  status,
-  currency,
-}: {
-  date: string;
-  label: string;
-  method: string;
-  amount: number;
-  status: "Paid" | "Pending";
-  currency: "USD" | "NGN";
-}) {
+function PayoutRow({ payout }: { payout: Payout }) {
   const statusStyle =
-    status === "Paid"
+    payout.status === "PAID"
       ? "bg-[var(--trend-up-bg)] text-[var(--trend-up)]"
-      : "bg-[rgba(234,179,8,0.12)] text-[#ca8a04]";
+      : payout.status === "FAILED"
+        ? "bg-[var(--danger-soft)] text-[var(--danger)]"
+        : "bg-[rgba(234,179,8,0.12)] text-[#ca8a04]";
   return (
-    <div className="grid grid-cols-[1.4fr_1.6fr_1fr_1fr_1fr] items-center gap-4 border-b border-[var(--border)] px-4 py-4 last:border-b-0 sm:px-6">
+    <div className="grid grid-cols-[1.2fr_1.4fr_1fr_1fr] items-center gap-4 border-b border-[var(--border)] px-4 py-4 last:border-b-0 sm:px-6">
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">
-          Date
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">Date</p>
+        <p className="mt-1 text-sm font-bold tabular-nums text-[var(--text)]">
+          {new Date(payout.createdAt).toLocaleDateString()}
         </p>
-        <p className="mt-1 text-sm font-bold tabular-nums text-[var(--text)]">{date}</p>
       </div>
       <div className="min-w-0">
-        <p className="truncate text-sm font-bold text-[var(--text)]">{label}</p>
-        <p className="mt-0.5 truncate text-xs text-[var(--muted)]">{method}</p>
-      </div>
-      <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">
-          Method
-        </p>
-        <p className="mt-1 text-sm font-semibold text-[var(--text)]">{method}</p>
+        <p className="truncate text-sm font-bold text-[var(--text)]">{payout.reference}</p>
+        <p className="mt-0.5 truncate text-xs text-[var(--muted)]">{payout.provider}</p>
       </div>
       <span
         className={`justify-self-start inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide uppercase ${statusStyle}`}
       >
-        {status}
+        {payout.status}
       </span>
       <p className="justify-self-end text-sm font-black tabular-nums text-[var(--primary)]">
-        +{formatMoney(amount, currency)}
+        {formatMoney(payout.amount, payout.currency)}
       </p>
     </div>
   );
 }
 
 export function LandlordDashboard() {
-  const hostListings: HostListing[] = mockListings.slice(0, 4).map((listing, i) => ({
-    id: listing.id,
-    title: listing.title,
-    location: listing.location,
-    image: listing.images[0] ?? "",
-    pricePerNight: listing.pricePerNight,
-    currency: listing.currency,
-    occupancy: [92, 78, 65, 84][i] ?? 70,
-    status: (["Active", "Active", "Active", "Pending"] as const)[i] ?? "Active",
-    totalNights: [28, 24, 18, 22][i] ?? 20,
-    totalRevenue: [listing.pricePerNight * 28, listing.pricePerNight * 24, listing.pricePerNight * 18, listing.pricePerNight * 22][i] ?? 0,
-  }));
+  const { accessToken, profile } = useWebAuth();
+  const { data: listings, loading: listingsLoading, error: listingsError } = useListings({
+    token: accessToken,
+    scope: "mine",
+  });
+  const [bookings, setBookings] = useState<OwnerBooking[]>([]);
+  const [bookingsError, setBookingsError] = useState<string | null>(null);
+  const [payouts, setPayouts] = useState<Payout[]>([]);
+  const [payoutsError, setPayoutsError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const hostBookings: HostBooking[] = [
-    {
-      id: "BK-2048",
-      guest: "Amanda Okafor",
-      listingTitle: "Aurora Retreat",
-      startDate: "2026-08-14",
-      nights: 5,
-      status: "Confirmed",
-      total: 1750,
-      currency: "USD",
-    },
-    {
-      id: "BK-2047",
-      guest: "Tunde Bakare",
-      listingTitle: "Palmview Estate",
-      startDate: "2026-08-09",
-      nights: 3,
-      status: "Pending",
-      total: 840,
-      currency: "USD",
-    },
-    {
-      id: "BK-2046",
-      guest: "Sarah Johnson",
-      listingTitle: "The Courtyard Villa",
-      startDate: "2026-08-03",
-      nights: 7,
-      status: "Completed",
-      total: 2240,
-      currency: "USD",
-    },
-    {
-      id: "BK-2045",
-      guest: "Kofi Mensah",
-      listingTitle: "Ocean Breeze Villa",
-      startDate: "2026-07-28",
-      nights: 4,
-      status: "Completed",
-      total: 1160,
-      currency: "USD",
-    },
-  ];
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      setLoading(true);
+      const [bookingsResult, payoutsResult] = await Promise.allSettled([
+        fetchOwnerBookings(accessToken),
+        fetchOwnerPayouts(accessToken),
+      ]);
+      if (cancelled) return;
+      if (bookingsResult.status === "fulfilled") {
+        setBookings(bookingsResult.value);
+      } else {
+        setBookingsError(
+          bookingsResult.reason instanceof Error ? bookingsResult.reason.message : "Failed to load bookings",
+        );
+      }
+      if (payoutsResult.status === "fulfilled") {
+        setPayouts(payoutsResult.value);
+      } else {
+        setPayoutsError(
+          payoutsResult.reason instanceof Error ? payoutsResult.reason.message : "Failed to load payouts",
+        );
+      }
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken]);
 
-  const hostStats: HostStat[] = [
-    {
-      label: "Monthly Revenue",
-      value: "$24,850",
-      trend: 18.2,
-      trendDirection: "up",
-      delta: "+$3,820",
-      icon: "💰",
-      iconBg: "rgba(30, 91, 255, 0.12)",
-      iconColor: "var(--primary)",
-    },
-    {
-      label: "Occupancy Rate",
-      value: "80.4%",
-      trend: 6.1,
-      trendDirection: "up",
-      delta: "+4.6%",
-      icon: "🏠",
-      iconBg: "var(--primary-soft)",
-      iconColor: "var(--primary)",
-    },
-    {
-      label: "Active Listings",
-      value: String(hostListings.filter((l) => l.status === "Active").length),
-      trend: 12.5,
-      trendDirection: "up",
-      delta: "+1",
-      icon: "🏢",
-      iconBg: "rgba(59, 130, 246, 0.12)",
-      iconColor: "#3b82f6",
-    },
-    {
-      label: "Guest Bookings",
-      value: "37",
-      trend: 2.4,
-      trendDirection: "down",
-      delta: "-1",
-      icon: "👥",
-      iconBg: "rgba(236, 72, 153, 0.10)",
-      iconColor: "var(--trend-down)",
-    },
-  ];
-
-  const upcomingPayable = hostBookings
-    .filter((b) => b.status === "Confirmed" || b.status === "Completed")
+  const sharedCurrency = listings[0]?.currency ?? payouts[0]?.currency ?? "NGN";
+  const totalRevenue = bookings
+    .filter((b) => b.status === "CONFIRMED" || b.status === "COMPLETED")
     .reduce((sum, b) => sum + b.total, 0);
+  const pendingPayoutTotal = payouts
+    .filter((p) => p.status === "PENDING" || p.status === "PROCESSING")
+    .reduce((sum, p) => sum + p.amount, 0);
+  const paidPayoutTotal = payouts
+    .filter((p) => p.status === "PAID")
+    .reduce((sum, p) => sum + p.amount, 0);
+
+  const recentBookings = [...bookings]
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, 4);
+  const recentPayouts = [...payouts]
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, 4);
 
   return (
     <AppShell
@@ -318,29 +205,30 @@ export function LandlordDashboard() {
     >
       <div className="space-y-6">
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {hostStats.map((card) => (
-            <StatCard
-              key={card.label}
-              eyebrow={card.label}
-              value={card.value}
-              icon={card.icon}
-              tint={card.iconColor}
-              badge={{
-                label: `${Math.abs(card.trend)}%`,
-                positive: card.trendDirection === "up",
-              }}
-              footer={
-                <>
-                  <p className="text-xs font-semibold text-[var(--muted)]">
-                    <span className="text-[var(--primary)]">{card.delta}</span> vs last 30 days
-                  </p>
-                  <span className="text-[var(--muted)] transition-transform duration-200 group-hover:translate-x-0.5">
-                    →
-                  </span>
-                </>
-              }
-            />
-          ))}
+          <StatCard
+            eyebrow="Listings"
+            value={listingsLoading ? "—" : String(listings.length)}
+            icon="🏢"
+            tint="var(--primary)"
+          />
+          <StatCard
+            eyebrow="Guest Bookings"
+            value={loading ? "—" : String(bookings.length)}
+            icon="👥"
+            tint="var(--primary)"
+          />
+          <StatCard
+            eyebrow="Confirmed Revenue"
+            value={loading ? "—" : formatMoney(totalRevenue, sharedCurrency)}
+            icon="💰"
+            tint="var(--primary)"
+          />
+          <StatCard
+            eyebrow="Paid Out"
+            value={loading ? "—" : formatMoney(paidPayoutTotal, sharedCurrency)}
+            icon="✓"
+            tint="var(--trend-up)"
+          />
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
@@ -348,13 +236,13 @@ export function LandlordDashboard() {
             <div className="flex flex-col gap-3 border-b border-[var(--border)] px-6 py-5 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted)]">
-                  Revenue Snapshot
+                  Welcome back
                 </p>
                 <h2 className="mt-2 text-[26px] font-black tracking-tight text-[var(--text)]">
-                  Track your earnings
+                  {profile?.name?.trim() || profile?.email}
                 </h2>
                 <p className="mt-2 max-w-md text-sm leading-6 text-[var(--muted)]">
-                  Monthly revenue, occupancy and payout trends across every property you host.
+                  Here&apos;s a live snapshot of your properties, guest bookings and payouts.
                 </p>
               </div>
               <Link
@@ -365,161 +253,95 @@ export function LandlordDashboard() {
               </Link>
             </div>
             <div className="px-6 py-6">
-              <div className="space-y-5">
-                {[
-                  { label: "Jan", pct: "62%", value: "$14,200" },
-                  { label: "Feb", pct: "74%", value: "$16,850" },
-                  { label: "Mar", pct: "68%", value: "$15,400" },
-                  { label: "Apr", pct: "82%", value: "$18,960" },
-                  { label: "May", pct: "90%", value: "$21,100" },
-                  { label: "Jun", pct: "96%", value: "$24,850" },
-                ].map((item) => (
-                  <div key={item.label}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <p className="w-10 text-sm font-black tracking-wide text-[var(--muted)]">
-                          {item.label}
-                        </p>
-                        <div className="flex-1">
-                          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[var(--panel-soft)]">
-                            <div
-                              className="h-full rounded-full bg-gradient-to-r from-[var(--primary)] to-[#7CA8FF]"
-                              style={{ width: item.pct }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-sm font-black tabular-nums text-[var(--text)]">
-                        {item.value}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              {listingsError ? (
+                <p className="text-sm font-semibold text-[var(--danger)]">⚠ {listingsError}</p>
+              ) : bookingsError ? (
+                <p className="text-sm font-semibold text-[var(--danger)]">⚠ {bookingsError}</p>
+              ) : (
+                <p className="text-sm text-[var(--muted)]">
+                  {listings.length} listing{listings.length === 1 ? "" : "s"} · {bookings.length} guest
+                  booking{bookings.length === 1 ? "" : "s"} on record.
+                </p>
+              )}
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-            <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-card)]">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted)]">
-                    Next Payout
-                  </p>
-                  <div className="mt-3 flex items-baseline gap-2">
-                    <p className="text-[26px] font-black tracking-tight text-[var(--text)]">
-                      ${upcomingPayable.toLocaleString()}
-                    </p>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--trend-up-bg)] px-2 py-0.5 text-[11px] font-bold text-[var(--trend-up)]">
-                      ⦿ 14.2%
-                    </span>
-                  </div>
-                </div>
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl text-xl" style={{ background: "rgba(30, 91, 255, 0.12)", color: "var(--primary)" }}>
-                  💳
-                </span>
-              </div>
-              <div className="mt-5 space-y-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <p className="text-[var(--muted)]">Confirmed stays</p>
-                  <p className="font-bold tabular-nums text-[var(--text)]">
-                    ${hostBookings.filter((b) => b.status === "Confirmed").reduce((s, b) => s + b.total, 0).toLocaleString()}
-                  </p>
-                </div>
-                <div className="flex items-center justify-between">
-                  <p className="text-[var(--muted)]">Service fee (5%)</p>
-                  <p className="font-bold tabular-nums text-[var(--danger)]">
-                    -${Math.round(upcomingPayable * 0.05).toLocaleString()}
-                  </p>
-                </div>
-                <div className="flex items-center justify-between pt-2 border-t border-[var(--border)]">
-                  <p className="text-sm font-bold uppercase tracking-[0.14em] text-[var(--muted-2)]">
-                    Deposits Friday
-                  </p>
-                  <p className="text-base font-black tabular-nums text-[var(--primary)]">
-                    ${Math.round(upcomingPayable * 0.95).toLocaleString()}
+          <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-card)]">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted)]">
+                  Pending Payouts
+                </p>
+                <div className="mt-3 flex items-baseline gap-2">
+                  <p className="text-[26px] font-black tracking-tight text-[var(--text)]">
+                    {loading ? "—" : formatMoney(pendingPayoutTotal, sharedCurrency)}
                   </p>
                 </div>
               </div>
+              <span
+                className="flex h-11 w-11 items-center justify-center rounded-xl text-xl"
+                style={{ background: "rgba(30, 91, 255, 0.12)", color: "var(--primary)" }}
+              >
+                💳
+              </span>
             </div>
-
-            <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-gradient-to-br from-[var(--sidebar)] via-[#0E3298] to-[var(--sidebar-active)] p-5 shadow-[0_12px_32px_rgba(10,42,140,0.35)] text-white">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#7CA8FF]/70">
-                    List more
-                  </p>
-                  <h3 className="mt-2 text-[22px] font-black tracking-tight">
-                    Host Plan Pro
-                  </h3>
-                </div>
-                <Link
-                  href="/host/listings"
-                  className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-bold text-[var(--sidebar)] shadow transition hover:bg-[#EDF3FF]"
-                >
-                  Upgrade
-                </Link>
-              </div>
-              <p className="mt-4 text-sm leading-6 text-white/80">
-                Promote properties to Featured, zero service fees on stays, priority
-                placements and instant payout on checkout.
+            {payoutsError ? (
+              <p className="mt-4 text-xs font-semibold text-[var(--danger)]">⚠ {payoutsError}</p>
+            ) : (
+              <p className="mt-4 text-xs text-[var(--muted)]">
+                {payouts.filter((p) => p.status === "PENDING" || p.status === "PROCESSING").length}{" "}
+                payout{payouts.length === 1 ? "" : "s"} awaiting disbursement.
               </p>
-              <div className="mt-5 grid grid-cols-2 gap-3 rounded-xl bg-white/5 p-3">
-                <div>
-                  <p className="text-xs font-semibold text-white/60">Service fees</p>
-                  <p className="mt-1 text-lg font-black text-white">
-                    <span className="text-[#7CA8FF]">0%</span>
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-white/60">Featured slots</p>
-                  <p className="mt-1 text-lg font-black text-white">🏠 ∞</p>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </section>
 
         <section className="space-y-4">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h3 className="text-[20px] font-black tracking-tight text-[var(--text)]">
-                My Listings
-              </h3>
+              <h3 className="text-[20px] font-black tracking-tight text-[var(--text)]">My Listings</h3>
               <p className="mt-1 text-sm text-[var(--muted)]">
-                Occupancy, booked nights and lifetime revenue for every property.
+                Booked nights and confirmed revenue for every property.
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                className="inline-flex h-10 items-center justify-center rounded-xl border border-[var(--border)] bg-white px-4 text-sm font-bold text-[var(--text)] transition hover:bg-[var(--panel-soft)]"
-              >
-                Export
-              </button>
-              <Link
-                href="/host/listings"
-                className="inline-flex h-10 items-center justify-center gap-1 rounded-xl bg-[var(--primary)] px-4 text-sm font-bold text-white shadow-[0_8px_20px_rgba(30,91,255,0.35)] transition hover:bg-[var(--primary-600)]"
-              >
-                + New Listing
-              </Link>
-            </div>
+            <Link
+              href="/host/listings"
+              className="inline-flex h-10 items-center justify-center gap-1 rounded-xl bg-[var(--primary)] px-4 text-sm font-bold text-white shadow-[0_8px_20px_rgba(30,91,255,0.35)] transition hover:bg-[var(--primary-600)]"
+            >
+              + New Listing
+            </Link>
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-[var(--shadow-card)]">
-            <div className="grid grid-cols-[1.6fr_1.2fr_0.8fr_1fr_1fr] items-center gap-4 border-b border-[var(--border)] bg-[var(--panel-soft)] px-4 py-3 sm:px-6">
-              {["Property", "Rate", "Occupancy", "Booked Nights", "Revenue"].map((header) => (
-                <p
-                  key={header}
-                  className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--muted)]"
-                >
+            <div className="grid grid-cols-[1.6fr_1.2fr_0.9fr_1fr] items-center gap-4 border-b border-[var(--border)] bg-[var(--panel-soft)] px-4 py-3 sm:px-6">
+              {["Property", "Rate", "Booked Nights", "Revenue"].map((header) => (
+                <p key={header} className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--muted)]">
                   {header}
                 </p>
               ))}
             </div>
-            {hostListings.map((listing) => (
-              <HostListingRow key={listing.id} listing={listing} />
-            ))}
+            {listingsLoading ? (
+              <p className="px-6 py-8 text-sm font-semibold text-[var(--muted)]">Loading listings…</p>
+            ) : listings.length ? (
+              listings.slice(0, 4).map((listing) => (
+                <ListingRow
+                  key={listing.id}
+                  listing={{
+                    id: listing.id,
+                    title: listing.title,
+                    location: listing.location,
+                    image: listing.images[0] ?? "",
+                    pricePerNight: listing.pricePerNight,
+                    currency: listing.currency,
+                  }}
+                  bookingsForListing={bookings.filter((b) => b.listingId === listing.id)}
+                />
+              ))
+            ) : (
+              <p className="px-6 py-8 text-sm text-[var(--muted)]">
+                You haven&apos;t published any listings yet.
+              </p>
+            )}
           </div>
         </section>
 
@@ -544,28 +366,27 @@ export function LandlordDashboard() {
             <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-[var(--shadow-card)]">
               <div className="grid grid-cols-[1.4fr_1.4fr_1fr_0.8fr_1fr_0.9fr] items-center gap-4 border-b border-[var(--border)] bg-[var(--panel-soft)] px-4 py-3 sm:px-6">
                 {["Guest", "Property", "Check-in", "Nights", "Payout", "Status"].map((header) => (
-                  <p
-                    key={header}
-                    className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--muted)]"
-                  >
+                  <p key={header} className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--muted)]">
                     {header}
                   </p>
                 ))}
               </div>
-              {hostBookings.map((booking) => (
-                <HostBookingRow key={booking.id} booking={booking} />
-              ))}
+              {loading ? (
+                <p className="px-6 py-8 text-sm font-semibold text-[var(--muted)]">Loading bookings…</p>
+              ) : recentBookings.length ? (
+                recentBookings.map((booking) => <BookingRow key={booking.id} booking={booking} />)
+              ) : (
+                <p className="px-6 py-8 text-sm text-[var(--muted)]">No guest bookings yet.</p>
+              )}
             </div>
           </div>
 
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h3 className="text-[20px] font-black tracking-tight text-[var(--text)]">
-                  Payout History
-                </h3>
+                <h3 className="text-[20px] font-black tracking-tight text-[var(--text)]">Payout History</h3>
                 <p className="mt-1 text-sm text-[var(--muted)]">
-                  Weekly disbursements — bank transfer and wallet payouts.
+                  Disbursements to your connected bank/wallet account.
                 </p>
               </div>
               <Link
@@ -576,40 +397,22 @@ export function LandlordDashboard() {
               </Link>
             </div>
             <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-[var(--shadow-card)]">
-              <div className="grid grid-cols-[1.4fr_1.6fr_1fr_1fr_1fr] items-center gap-4 border-b border-[var(--border)] bg-[var(--panel-soft)] px-4 py-3 sm:px-6">
-                {["Date", "Batch", "Method", "Status", "Amount"].map((header) => (
-                  <p
-                    key={header}
-                    className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--muted)]"
-                  >
+              <div className="grid grid-cols-[1.2fr_1.4fr_1fr_1fr] items-center gap-4 border-b border-[var(--border)] bg-[var(--panel-soft)] px-4 py-3 sm:px-6">
+                {["Date", "Reference", "Status", "Amount"].map((header) => (
+                  <p key={header} className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--muted)]">
                     {header}
                   </p>
                 ))}
               </div>
-              <PayoutHistoryRow
-                date="2026-07-31"
-                label="Weekly batch · BK-2046 / BK-2045"
-                method="Bank Transfer"
-                amount={3080}
-                status="Paid"
-                currency="USD"
-              />
-              <PayoutHistoryRow
-                date="2026-07-24"
-                label="Weekly batch · BK-2043 / BK-2042"
-                method="Bank Transfer"
-                amount={2620}
-                status="Paid"
-                currency="USD"
-              />
-              <PayoutHistoryRow
-                date="2026-08-07"
-                label="Weekly batch · BK-2048 / BK-2047"
-                method="Wallet Balance"
-                amount={Math.round((1750 + 840) * 0.95)}
-                status="Pending"
-                currency="USD"
-              />
+              {loading ? (
+                <p className="px-6 py-8 text-sm font-semibold text-[var(--muted)]">Loading payouts…</p>
+              ) : recentPayouts.length ? (
+                recentPayouts.map((payout) => <PayoutRow key={payout.id} payout={payout} />)
+              ) : (
+                <p className="px-6 py-8 text-sm text-[var(--muted)]">
+                  No payouts yet — they appear here after a guest checks out of a paid stay.
+                </p>
+              )}
             </div>
           </div>
         </section>

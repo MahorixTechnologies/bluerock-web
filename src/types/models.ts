@@ -71,7 +71,7 @@ export type ListingCreateInput = {
 export type ListingUpdateInput = Partial<ListingCreateInput>;
 
 export type BookingStatus = "PENDING" | "CONFIRMED" | "REJECTED" | "CANCELLED" | "COMPLETED";
-export type PaymentStatus = "UNPAID" | "PAID" | "REFUNDED";
+export type PaymentStatus = "UNPAID" | "PAID" | "REFUND_PENDING" | "REFUNDED";
 
 export type WebBooking = {
   id: string;

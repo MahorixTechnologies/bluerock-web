@@ -74,6 +74,14 @@ function getStatusConfig(status: PaymentStatus): StatusConfig {
           </svg>
         ),
       };
+    case "REFUND_PENDING":
+      return {
+        label: "Refund pending",
+        pillClass:
+          "bg-[rgba(234,179,8,0.14)] text-[#b45309] border border-[rgba(234,179,8,0.25)]",
+        dotClass: "bg-[#d97706]",
+        icon: <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[#d97706]" />,
+      };
     case "PROCESSING":
       return {
         label: "Processing",

@@ -1,7 +1,6 @@
 import type { Currency, Receipt, WebBooking } from "@/types/models";
 import { formatMoney } from "@/utils";
 import { apiFetch } from "@/api/client";
-import { getStoredBookings, saveStoredBookings } from "@/api/bookings";
 import type { PaymentProvider } from "@/components/feature/payment/PaymentMethodCard";
 
 const RECEIPTS_KEY = "bluerock.web.receipts.v1";
@@ -24,6 +23,7 @@ function saveStoredReceipts(receipts: Receipt[]) {
 export type PaymentStatus =
   | "UNPAID"
   | "PAID"
+  | "REFUND_PENDING"
   | "REFUNDED"
   | "PROCESSING"
   | "FAILED";
@@ -220,15 +220,6 @@ export function recordReceiptForPaidBooking(booking: WebBooking): Receipt {
   if (!receipts.some((r) => r.bookingId === receipt.bookingId)) {
     saveStoredReceipts([receipt, ...receipts]);
   }
-
-  const bookings = getStoredBookings();
-  const idx = bookings.findIndex((b) => b.id === booking.id);
-  if (idx >= 0) {
-    const copy = [...bookings];
-    copy[idx] = { ...copy[idx], paymentStatus: "PAID", status: "CONFIRMED" };
-    saveStoredBookings(copy);
-  }
-
   return receipt;
 }
 
@@ -268,19 +259,4 @@ export function isRefundEligible(booking: WebBooking): boolean {
   const start = new Date(booking.startDate).getTime();
   const now = Date.now();
   return start > now + 2 * 24 * 60 * 60 * 1000;
-}
-
-export function issueRefund(bookingId: string, reason: string): void {
-  const bookings = getStoredBookings();
-  const idx = bookings.findIndex((b) => b.id === bookingId);
-  if (idx >= 0) {
-    const copy = [...bookings];
-    copy[idx] = {
-      ...copy[idx],
-      paymentStatus: "REFUNDED",
-      status: "CANCELLED",
-    };
-    saveStoredBookings(copy);
-  }
-  void reason;
 }
