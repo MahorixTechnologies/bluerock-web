@@ -11,6 +11,7 @@ import {
   StepCard,
   TextInput,
 } from "../AuthElements";
+import { OtpInput } from "../OtpInput";
 import { CheckBadge, WarningIcon } from "../icons";
 import { resetPassword } from "@/api/auth";
 
@@ -24,7 +25,8 @@ const passwordRules = [
 export function ResetPasswordStep() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [token, setToken] = useState(searchParams.get("token") ?? "");
+  const [email, setEmail] = useState(searchParams.get("email") ?? "");
+  const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -36,7 +38,8 @@ export function ResetPasswordStep() {
     [password],
   );
   const canSubmit =
-    token.trim().length > 0 &&
+    email.trim().length > 0 &&
+    code.trim().length === 6 &&
     checks.every((rule) => rule.passed) &&
     confirmPassword === password;
 
@@ -44,7 +47,7 @@ export function ResetPasswordStep() {
     setSubmitting(true);
     setError(null);
     try {
-      await resetPassword({ token: token.trim(), newPassword: password });
+      await resetPassword({ email: email.trim(), code: code.trim(), newPassword: password });
       setDone(true);
     } catch (err) {
       if (err instanceof Error && err.message === "API_URL not configured") {
@@ -52,7 +55,7 @@ export function ResetPasswordStep() {
           "Password reset needs a connected backend (NEXT_PUBLIC_API_URL). This demo environment can't reset passwords right now.",
         );
       } else {
-        setError(err instanceof Error ? err.message : "Reset failed. The link may be invalid or expired.");
+        setError(err instanceof Error ? err.message : "Reset failed. The code may be invalid or expired.");
       }
     } finally {
       setSubmitting(false);
@@ -62,7 +65,7 @@ export function ResetPasswordStep() {
   return (
     <AuthShell
       title="Set a new password"
-      subtitle="Paste the reset token from your email and choose a new password."
+      subtitle="Enter the 6-digit code from your email and choose a new password."
       cardWidthClassName="max-w-[470px]"
     >
       <StepCard className="px-4 py-5">
@@ -77,9 +80,20 @@ export function ResetPasswordStep() {
         ) : (
           <>
             <label className="block">
-              <InputLabel required>Reset token</InputLabel>
-              <TextInput value={token} onChange={setToken} muted placeholder="Paste the token from your email" />
+              <InputLabel required>Email address</InputLabel>
+              <TextInput
+                type="email"
+                value={email}
+                onChange={setEmail}
+                muted
+                placeholder="you@example.com"
+              />
             </label>
+
+            <div className="mt-4">
+              <InputLabel required>6-digit reset code</InputLabel>
+              <OtpInput value={code} onChange={setCode} disabled={submitting} />
+            </div>
 
             <label className="mt-4 block">
               <InputLabel required>New password</InputLabel>

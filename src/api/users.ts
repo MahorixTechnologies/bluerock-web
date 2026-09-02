@@ -22,6 +22,29 @@ export async function fetchMe(accessToken: string | null): Promise<WebUserProfil
   }
 }
 
+export type RenterLookupResult = {
+  id: string;
+  email: string;
+  name: string | null;
+  phone: string | null;
+};
+
+export async function lookupRenterByEmail(
+  accessToken: string | null,
+  email: string,
+): Promise<RenterLookupResult> {
+  const raw = await apiFetch(`/users/lookup-renter?email=${encodeURIComponent(email)}`, {
+    accessToken,
+  });
+  const data = (raw ?? {}) as Record<string, unknown>;
+  return {
+    id: String(data.id ?? ""),
+    email: String(data.email ?? ""),
+    name: typeof data.name === "string" ? data.name : null,
+    phone: typeof data.phone === "string" ? data.phone : null,
+  };
+}
+
 export async function applyForOwnerRole(
   accessToken: string | null,
 ): Promise<OwnerApplicationStatus> {

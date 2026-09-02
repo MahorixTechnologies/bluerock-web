@@ -6,8 +6,8 @@ function asRecord(raw: unknown): Record<string, unknown> {
 
 export type RequestEmailVerificationResult = {
   success: boolean;
-  /** Only present because this demo backend has no real email delivery. */
-  emailVerificationToken?: string;
+  /** Only present outside production, when no email server is wired up. */
+  emailVerificationCode?: string;
 };
 
 export async function requestEmailVerification(
@@ -20,22 +20,22 @@ export async function requestEmailVerification(
   const data = asRecord(raw);
   return {
     success: Boolean(data.success ?? true),
-    emailVerificationToken:
-      typeof data.emailVerificationToken === "string" ? data.emailVerificationToken : undefined,
+    emailVerificationCode:
+      typeof data.emailVerificationCode === "string" ? data.emailVerificationCode : undefined,
   };
 }
 
-export async function verifyEmail(token: string): Promise<void> {
+export async function verifyEmail(params: { email: string; code: string }): Promise<void> {
   await apiFetch("/auth/verify-email", {
     method: "POST",
-    body: JSON.stringify({ token }),
+    body: JSON.stringify(params),
   });
 }
 
 export type ForgotPasswordResult = {
   success: boolean;
-  /** Only present because this demo backend has no real email delivery. */
-  passwordResetToken?: string;
+  /** Only present outside production, when no email server is wired up. */
+  passwordResetCode?: string;
 };
 
 export async function forgotPassword(email: string): Promise<ForgotPasswordResult> {
@@ -46,13 +46,14 @@ export async function forgotPassword(email: string): Promise<ForgotPasswordResul
   const data = asRecord(raw);
   return {
     success: Boolean(data.success ?? true),
-    passwordResetToken:
-      typeof data.passwordResetToken === "string" ? data.passwordResetToken : undefined,
+    passwordResetCode:
+      typeof data.passwordResetCode === "string" ? data.passwordResetCode : undefined,
   };
 }
 
 export async function resetPassword(params: {
-  token: string;
+  email: string;
+  code: string;
   newPassword: string;
 }): Promise<void> {
   await apiFetch("/auth/reset-password", {

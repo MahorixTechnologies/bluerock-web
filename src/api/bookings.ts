@@ -110,6 +110,26 @@ export async function createBookingOnApi(params: {
   return normalizeBooking(raw as Record<string, unknown>);
 }
 
+export async function createBookingForRenterOnApi(params: {
+  accessToken: string | null;
+  listingId: string;
+  renterId: string;
+  startDate: string;
+  endDate: string;
+}): Promise<OwnerBooking> {
+  const raw = await apiFetch("/bookings/owner", {
+    accessToken: params.accessToken,
+    method: "POST",
+    body: JSON.stringify({
+      listingId: params.listingId,
+      renterId: params.renterId,
+      startDate: params.startDate,
+      endDate: params.endDate,
+    }),
+  });
+  return normalizeOwnerBooking(raw as Record<string, unknown>);
+}
+
 export async function decideOwnerBooking(params: {
   accessToken: string | null;
   bookingId: string;

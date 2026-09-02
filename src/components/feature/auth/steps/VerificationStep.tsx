@@ -10,8 +10,8 @@ import {
   SectionLabel,
   StepCard,
   StepHeader,
-  TextInput,
 } from "../AuthElements";
+import { OtpInput } from "../OtpInput";
 import { WarningIcon } from "../icons";
 import { AuthShell } from "../AuthShell";
 import { requestEmailVerification, verifyEmail } from "@/api/auth";
@@ -36,11 +36,11 @@ export function VerificationStep({ role }: { role: Role }) {
     setRequestNotice(null);
     try {
       const result = await requestEmailVerification(email);
-      if (result.emailVerificationToken) {
-        setDemoToken(result.emailVerificationToken);
-        setCode(result.emailVerificationToken);
+      if (result.emailVerificationCode) {
+        setDemoToken(result.emailVerificationCode);
+        setCode(result.emailVerificationCode);
       } else {
-        setRequestNotice("If an account exists for this email, a verification link was sent.");
+        setRequestNotice("If an account exists for this email, a verification code was sent.");
       }
     } catch (err) {
       if (err instanceof Error && err.message === "API_URL not configured") {
@@ -64,13 +64,13 @@ export function VerificationStep({ role }: { role: Role }) {
 
   if (!content) return null;
 
-  const canContinue = code.trim().length > 0 && !verifying;
+  const canContinue = code.trim().length === 6 && !verifying;
 
   async function handleContinue() {
     setVerifying(true);
     setError(null);
     try {
-      await verifyEmail(code.trim());
+      await verifyEmail({ email, code: code.trim() });
       router.push(`/register/${role}/password?email=${encodeURIComponent(email)}`);
     } catch (err) {
       setError(
@@ -97,7 +97,7 @@ export function VerificationStep({ role }: { role: Role }) {
 
           <p className="mt-5 text-[15px] leading-7 text-[#737b8c]">
             We&apos;ve sent a verification code to{" "}
-            <span className="font-extrabold text-[#1f2536]">{maskEmail(email)}</span>. Paste it
+            <span className="font-extrabold text-[#1f2536]">{maskEmail(email)}</span>. Enter it
             below to continue.
           </p>
 
@@ -113,10 +113,10 @@ export function VerificationStep({ role }: { role: Role }) {
             <p className="mt-4 text-[13px] font-semibold text-[#6d90ff]">{requestNotice}</p>
           ) : null}
 
-          <label className="mt-5 block">
-            <InputLabel required>Verification code</InputLabel>
-            <TextInput value={code} onChange={setCode} placeholder="Paste your verification code" />
-          </label>
+          <div className="mt-5">
+            <InputLabel required>6-digit verification code</InputLabel>
+            <OtpInput value={code} onChange={setCode} disabled={verifying} />
+          </div>
 
           {error ? (
             <div className="mt-4 flex items-start gap-3 rounded-xl border border-[var(--danger)]/15 bg-[var(--danger-bg)] px-4 py-3 text-[#991b1b]">

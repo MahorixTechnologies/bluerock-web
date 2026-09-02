@@ -10,7 +10,8 @@ import { DashboardRouter } from "@/components/feature/home/DashboardRouter";
 import { useWebAuth } from "@/providers/WebAuthProvider";
 import { BookingStatusBadge } from "@/components/feature/booking/BookingStatusBadge";
 import { fetchMyBookings } from "@/api/bookings";
-import { requestEmailVerification } from "@/api/auth";
+import { requestEmailVerification, verifyEmail } from "@/api/auth";
+import { OtpInput } from "@/components/feature/auth/OtpInput";
 import { updateMe, fetchMe } from "@/api/users";
 import type { WebBooking, WebUserProfile } from "@/types/models";
 import { formatBookingDatesCompact } from "@/constants/booking-status";
@@ -30,9 +31,21 @@ function RolePill({ role }: { role: WebUserProfile["role"] }) {
   );
 }
 
-function VerifiedBadge({ verified, email }: { verified: boolean; email: string }) {
+function VerifiedBadge({
+  verified,
+  email,
+  onVerified,
+}: {
+  verified: boolean;
+  email: string;
+  onVerified: () => void;
+}) {
   const [sending, setSending] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [codeSent, setCodeSent] = useState(false);
+  const [code, setCode] = useState("");
 
   if (verified) {
     return (
@@ -45,12 +58,14 @@ function VerifiedBadge({ verified, email }: { verified: boolean; email: string }
   async function handleResend() {
     setSending(true);
     setNotice(null);
+    setError(null);
     try {
       const result = await requestEmailVerification(email);
+      setCodeSent(true);
       setNotice(
-        result.emailVerificationToken
-          ? `Demo mode: verification token — ${result.emailVerificationToken}`
-          : "If this email needs verifying, a link has been sent.",
+        result.emailVerificationCode
+          ? `Demo mode: verification code — ${result.emailVerificationCode}`
+          : "Check your email for a 6-digit code.",
       );
     } catch (err) {
       setNotice(
@@ -63,8 +78,21 @@ function VerifiedBadge({ verified, email }: { verified: boolean; email: string }
     }
   }
 
+  async function handleVerify() {
+    setVerifying(true);
+    setError(null);
+    try {
+      await verifyEmail({ email, code: code.trim() });
+      onVerified();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "That code didn't work.");
+    } finally {
+      setVerifying(false);
+    }
+  }
+
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-[rgba(234,179,8,0.12)] px-3 py-1.5 text-[11px] font-bold text-[var(--muted-2)]">
           ⚠ Not verified yet
@@ -75,10 +103,27 @@ function VerifiedBadge({ verified, email }: { verified: boolean; email: string }
           disabled={sending}
           className="inline-flex items-center rounded-full border border-[var(--muted-2)]/30 bg-[rgba(234,179,8,0.08)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--muted-2)] transition hover:bg-[rgba(234,179,8,0.16)] disabled:opacity-60"
         >
-          {sending ? "Sending…" : "Resend"}
+          {sending ? "Sending…" : codeSent ? "Resend code" : "Send code"}
         </button>
       </div>
       {notice ? <p className="text-[11px] font-semibold text-[var(--muted)] break-all">{notice}</p> : null}
+
+      {codeSent ? (
+        <div className="mt-1 flex flex-col items-start gap-2">
+          <div className="w-full max-w-[280px]">
+            <OtpInput value={code} onChange={setCode} disabled={verifying} autoFocus={false} />
+          </div>
+          {error ? <p className="text-[11px] font-semibold text-[var(--danger)]">{error}</p> : null}
+          <button
+            type="button"
+            onClick={() => void handleVerify()}
+            disabled={code.trim().length !== 6 || verifying}
+            className="inline-flex items-center rounded-full bg-[var(--primary)] px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-[var(--primary-600)] disabled:opacity-60"
+          >
+            {verifying ? "Verifying…" : "Verify"}
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -278,7 +323,11 @@ function ProfilePage() {
                     <RolePill role={effectiveProfile.role} />
                   </div>
                   <div className="mt-3">
-                    <VerifiedBadge verified={effectiveProfile.emailVerified} email={effectiveProfile.email} />
+                    <VerifiedBadge
+                      verified={effectiveProfile.emailVerified}
+                      email={effectiveProfile.email}
+                      onVerified={() => refreshUserProfile({ emailVerified: true })}
+                    />
                   </div>
                 </div>
               </div>

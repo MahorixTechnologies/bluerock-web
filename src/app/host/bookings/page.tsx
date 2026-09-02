@@ -9,6 +9,7 @@ import {
   EmptyBookingsState,
   HostBookingQueue,
 } from "@/components/feature/booking";
+import { CreateBookingModal } from "@/components/feature/booking/CreateBookingModal";
 import { useWebAuth } from "@/providers/WebAuthProvider";
 import { decideOwnerBooking, fetchOwnerBookings } from "@/api/bookings";
 import type { OwnerBooking } from "@/types/models";
@@ -38,6 +39,7 @@ export function HostBookingsPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [decideError, setDecideError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -102,6 +104,16 @@ export function HostBookingsPage() {
   return (
     <AppShell heading="Guest Bookings" subheading="Approve stays and track check-ins across your listings">
       <div className="space-y-6">
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="inline-flex h-10 items-center justify-center gap-1 rounded-xl bg-[var(--primary)] px-4 text-sm font-bold text-white shadow-[0_8px_20px_rgba(30,91,255,0.35)] transition hover:bg-[var(--primary-600)]"
+          >
+            + Create Booking
+          </button>
+        </div>
+
         <section className="grid gap-4 sm:grid-cols-3 xl:grid-cols-5">
           <Tile label="Total Bookings" value={String(summary.total)} tint="var(--primary)" icon="📋" />
           <Tile label="Upcoming" value={String(summary.confirmed + summary.pending)} tint="var(--primary)" icon="📅" />
@@ -132,6 +144,17 @@ export function HostBookingsPage() {
           />
         )}
       </div>
+
+      {createOpen ? (
+        <CreateBookingModal
+          accessToken={accessToken}
+          onClose={() => setCreateOpen(false)}
+          onCreated={(booking) => {
+            setBookings((prev) => [booking, ...prev]);
+            setCreateOpen(false);
+          }}
+        />
+      ) : null}
     </AppShell>
   );
 }

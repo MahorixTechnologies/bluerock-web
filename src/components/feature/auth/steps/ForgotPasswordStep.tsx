@@ -22,7 +22,7 @@ export function ForgotPasswordStep() {
     try {
       const result = await forgotPassword(email.trim());
       setSent(true);
-      setDemoToken(result.passwordResetToken ?? null);
+      setDemoToken(result.passwordResetCode ?? null);
     } catch (err) {
       if (err instanceof Error && err.message === "API_URL not configured") {
         setError(
@@ -49,14 +49,14 @@ export function ForgotPasswordStep() {
               <p className="font-black">Check your email</p>
               <p className="mt-1">
                 If an account exists for <span className="font-bold">{email.trim()}</span>, a
-                reset link has been sent.
+                6-digit reset code has been sent.
               </p>
             </div>
 
             {demoToken ? (
               <div className="rounded-2xl border border-[var(--primary)]/15 bg-[#EDF3FF] px-4 py-4 text-[13px] leading-6 text-[#0F2F99]">
                 <p className="font-black text-[var(--sidebar)]">
-                  ✨ Demo mode: no email server is wired up, so here&apos;s your reset token
+                  ✨ Demo mode: no email server is wired up, so here&apos;s your reset code
                 </p>
                 <p className="mt-2 break-all font-mono text-xs">{demoToken}</p>
               </div>
@@ -64,9 +64,7 @@ export function ForgotPasswordStep() {
 
             <PrimaryButton
               onClick={() =>
-                router.push(
-                  `/reset-password${demoToken ? `?token=${encodeURIComponent(demoToken)}` : ""}`,
-                )
+                router.push(`/reset-password?email=${encodeURIComponent(email.trim())}`)
               }
             >
               Continue to reset password
