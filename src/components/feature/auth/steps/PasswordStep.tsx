@@ -15,6 +15,7 @@ import {
 import { AuthShell } from "../AuthShell";
 import { CheckBadge, WarningIcon } from "../icons";
 import { useWebAuth } from "@/providers/WebAuthProvider";
+import { clearRegistrationDraft, readRegistrationDraft } from "@/lib/registration-draft";
 
 const passwordRules = [
   { label: "Minimum of 8 characters", test: (value: string) => value.length >= 8 },
@@ -36,10 +37,11 @@ export function PasswordStep({ role }: { role: Role }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { register } = useWebAuth();
-  const email = searchParams.get("email") ?? "";
-  const firstName = searchParams.get("firstName") ?? "";
-  const lastName = searchParams.get("lastName") ?? "";
-  const phone = searchParams.get("phone") ?? "";
+  const draft = useMemo(() => readRegistrationDraft(), []);
+  const email = searchParams.get("email") ?? draft?.email ?? "";
+  const firstName = searchParams.get("firstName") ?? draft?.firstName ?? "";
+  const lastName = searchParams.get("lastName") ?? draft?.lastName ?? "";
+  const phone = searchParams.get("phone") ?? draft?.phone ?? "";
   const checks = useMemo(
     () => passwordRules.map((rule) => ({ ...rule, passed: rule.test(password) })),
     [password],
@@ -60,6 +62,7 @@ export function PasswordStep({ role }: { role: Role }) {
         phone: phone ? `+234${phone}` : undefined,
         role: role === "homeowner" ? "LANDLORD" : "RENTER",
       });
+      clearRegistrationDraft();
       router.push(`/register/${role}/verify?email=${encodeURIComponent(email)}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create your account.");

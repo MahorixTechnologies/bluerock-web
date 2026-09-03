@@ -1,10 +1,21 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 import { getRoleContent, type Role } from "../data";
 import { AuthShell } from "../AuthShell";
 
 export function SuccessStep({ role }: { role: Role }) {
+  const router = useRouter();
   const content = getRoleContent(role);
+
+  useEffect(() => {
+    if (!content) return;
+    const timer = setTimeout(() => router.push("/"), 1500);
+    return () => clearTimeout(timer);
+  }, [content, router]);
 
   if (!content) return null;
 
@@ -27,7 +38,7 @@ export function SuccessStep({ role }: { role: Role }) {
         </p>
 
         <Link
-          href="/login"
+          href="/"
           className="mt-8 flex h-11 w-full items-center justify-center rounded-[11px] bg-[#2b5df3] px-4 text-[15px] font-bold text-white shadow-[0_12px_24px_rgba(43,93,243,0.25)] transition hover:-translate-y-0.5"
         >
           Redirecting to {content.dashboardLabel}...

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { getRoleContent, maskEmail, type Role } from "../data";
@@ -15,10 +15,12 @@ import { OtpInput } from "../OtpInput";
 import { WarningIcon } from "../icons";
 import { AuthShell } from "../AuthShell";
 import { requestEmailVerification, verifyEmail } from "@/api/auth";
+import { useWebAuth } from "@/providers/WebAuthProvider";
 
 export function VerificationStep({ role }: { role: Role }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { completeVerification } = useWebAuth();
   const content = getRoleContent(role);
   const email = searchParams.get("email") ?? "jsmith@gmail.com";
 
@@ -28,7 +30,6 @@ export function VerificationStep({ role }: { role: Role }) {
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [requestNotice, setRequestNotice] = useState<string | null>(null);
-  const requestedRef = useRef(false);
 
   async function sendCode() {
     setRequesting(true);
@@ -55,12 +56,11 @@ export function VerificationStep({ role }: { role: Role }) {
     }
   }
 
-  useEffect(() => {
-    if (requestedRef.current) return;
-    requestedRef.current = true;
-    void sendCode();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // A verification code was already emailed as part of account creation
+  // (AuthService.register issues one automatically) — resending here on
+  // mount would silently invalidate that code and send a second email for
+  // every signup. Only fire a new one when the user explicitly asks via
+  // "Resend Code".
 
   if (!content) return null;
 
@@ -70,8 +70,15 @@ export function VerificationStep({ role }: { role: Role }) {
     setVerifying(true);
     setError(null);
     try {
-      await verifyEmail({ email, code: code.trim() });
-      router.push(`/register/${role}/password?email=${encodeURIComponent(email)}`);
+      const result = await verifyEmail({ email, code: code.trim() });
+      completeVerification(result.accessToken, {
+        email: result.user.email,
+        name: result.user.name ?? "",
+        phone: result.user.phone ?? "",
+        emailVerified: result.user.emailVerified,
+        role: result.user.role,
+      });
+      router.push(`/register/${role}/success`);
     } catch (err) {
       setError(
         err instanceof Error

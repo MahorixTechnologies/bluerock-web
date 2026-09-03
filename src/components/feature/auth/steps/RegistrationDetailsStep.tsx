@@ -15,6 +15,7 @@ import {
   TextInput,
 } from "../AuthElements";
 import { AuthShell } from "../AuthShell";
+import { saveRegistrationDraft } from "@/lib/registration-draft";
 
 export function RegistrationDetailsStep({ role }: { role: Role }) {
   const router = useRouter();
@@ -102,12 +103,14 @@ export function RegistrationDetailsStep({ role }: { role: Role }) {
           <PrimaryButton
             disabled={!canContinue}
             onClick={() => {
-              const params = new URLSearchParams({
+              const draft = {
                 email: email.trim(),
                 firstName: firstName.trim(),
                 lastName: lastName.trim(),
                 phone: phone.trim(),
-              });
+              };
+              saveRegistrationDraft(draft);
+              const params = new URLSearchParams(draft);
               router.push(`/register/${role}/password?${params.toString()}`);
             }}
           >

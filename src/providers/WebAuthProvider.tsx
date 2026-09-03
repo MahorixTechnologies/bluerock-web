@@ -44,6 +44,13 @@ type WebAuthContextValue = {
   register: (params: RegisterParams) => Promise<void>;
   logout: () => Promise<void>;
   refreshUserProfile: (next: Partial<WebUserProfile>) => void;
+  /**
+   * Signs the user in with a token obtained from a just-completed email
+   * verification (see VerificationStep) — register() deliberately never
+   * signs anyone in, so this (and login()) are the only ways `status`
+   * becomes "signedIn".
+   */
+  completeVerification: (accessToken: string, profile: WebUserProfile) => void;
 };
 
 type DemoAccount = {
@@ -64,28 +71,6 @@ const demoAccounts: DemoAccount[] = [
       phone: "",
       emailVerified: true,
       role: "ADMIN",
-    },
-  },
-  {
-    email: "landlord@bluerock.com",
-    password: "landlord123",
-    profile: {
-      email: "landlord@bluerock.com",
-      name: "BlueRock Landlord",
-      phone: "+2348123456789",
-      emailVerified: true,
-      role: "LANDLORD",
-    },
-  },
-  {
-    email: "renter@bluerock.com",
-    password: "renter123",
-    profile: {
-      email: "renter@bluerock.com",
-      name: "BlueRock Renter",
-      phone: "",
-      emailVerified: true,
-      role: "RENTER",
     },
   },
 ];
@@ -150,9 +135,12 @@ async function loginWithApi({
   };
 }
 
-async function registerWithApi(
-  params: RegisterParams,
-): Promise<{ profile: WebUserProfile; accessToken: string }> {
+/**
+ * Deliberately returns no accessToken — the backend never issues one at
+ * registration. The account exists but is unverified and cannot log in
+ * until the emailed 6-digit code is confirmed via verifyEmail() below.
+ */
+async function registerWithApi(params: RegisterParams): Promise<{ profile: WebUserProfile }> {
   if (!API_URL) {
     throw new Error("API_URL not configured");
   }
@@ -176,15 +164,13 @@ async function registerWithApi(
     throw new Error("Registration response was empty.");
   }
 
-  const accessToken = typeof payload.accessToken === "string" ? payload.accessToken : "";
   const user = payload.user;
-  if (!accessToken || !user || typeof user !== "object" || !("email" in user)) {
+  if (!user || typeof user !== "object" || !("email" in user)) {
     throw new Error("Registration response was missing an account.");
   }
   const data = user as Record<string, unknown>;
 
   return {
-    accessToken,
     profile: {
       email: String(data.email),
       name: typeof data.name === "string" ? data.name : params.name,
@@ -283,31 +269,39 @@ export function WebAuthProvider({ children }: { children: ReactNode }) {
         }
       },
       register: async (params) => {
+        // Registering never signs the user in — the account is unverified
+        // until the emailed code is confirmed (see completeVerification).
+        // There's no session yet, so status goes straight back to signedOut
+        // rather than sitting in "loading" indefinitely.
+        if (API_URL) {
+          await registerWithApi(params);
+          return;
+        }
+        // Demo/offline fallback (no backend configured): there's no real
+        // email to verify against, so this path keeps its old
+        // immediate-sign-in behavior rather than pretending to gate it.
         setStatus("loading");
-
         try {
-          let next: StoredSession;
-          if (API_URL) {
-            const result = await registerWithApi(params);
-            next = { profile: result.profile, accessToken: result.accessToken };
-          } else {
-            next = {
-              profile: {
-                email: params.email.trim().toLowerCase(),
-                name: params.name,
-                phone: params.phone ?? "",
-                emailVerified: false,
-                role: params.role,
-              },
-              accessToken: `dev.${Date.now()}`,
-            };
-          }
+          const next: StoredSession = {
+            profile: {
+              email: params.email.trim().toLowerCase(),
+              name: params.name,
+              phone: params.phone ?? "",
+              emailVerified: false,
+              role: params.role,
+            },
+            accessToken: `dev.${Date.now()}`,
+          };
           setSession(next);
           setStatus("signedIn");
         } catch (err) {
           setStatus("signedOut");
           throw err;
         }
+      },
+      completeVerification: (accessToken, profile) => {
+        setSession({ accessToken, profile });
+        setStatus("signedIn");
       },
       logout: async () => {
         try {
