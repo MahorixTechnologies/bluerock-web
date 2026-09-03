@@ -110,8 +110,7 @@ export function RegistrationDetailsStep({ role }: { role: Role }) {
                 phone: phone.trim(),
               };
               saveRegistrationDraft(draft);
-              const params = new URLSearchParams(draft);
-              router.push(`/register/${role}/password?${params.toString()}`);
+              router.push(`/register/${role}/verify?email=${encodeURIComponent(draft.email)}`);
             }}
           >
             Continue

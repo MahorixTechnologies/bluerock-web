@@ -55,7 +55,7 @@ export function PasswordStep({ role }: { role: Role }) {
     setSubmitting(true);
     setError(null);
     try {
-      await register({
+      const result = await register({
         name: `${firstName} ${lastName}`.trim(),
         email,
         password,
@@ -63,7 +63,14 @@ export function PasswordStep({ role }: { role: Role }) {
         role: role === "homeowner" ? "LANDLORD" : "RENTER",
       });
       clearRegistrationDraft();
-      router.push(`/register/${role}/verify?email=${encodeURIComponent(email)}`);
+      if (result.signedIn) {
+        router.push(`/register/${role}/success`);
+      } else {
+        // The email wasn't verified before reaching this step (e.g. a
+        // direct URL visit skipping /verify) — fall back to that step
+        // rather than pretending the account is ready to use.
+        router.push(`/register/${role}/verify?email=${encodeURIComponent(email)}`);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create your account.");
     } finally {

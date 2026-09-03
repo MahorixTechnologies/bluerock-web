@@ -41,7 +41,7 @@ bluerock-web/
 │   │   │   ├── page.tsx           # Register → role selection
 │   │   │   └── [role]/
 │   │   │       ├── page.tsx       # Personal info step
-│   │   │       ├── verify/page.tsx   # 4-digit code
+│   │   │       ├── verify/page.tsx   # 6-digit code
 │   │   │       ├── password/page.tsx # Password + confirm + strength
 │   │   │       └── success/page.tsx  # Created → redirect
 │   │   └── search/
@@ -94,7 +94,7 @@ Next.js App Router file-based routing. All routes live under `src/app/*`.
 | `/login` | `app/login/page.tsx` | Login (same credentials as mobile) |
 | `/register` | `app/register/page.tsx` | Role selection (Homeowner / Renter) |
 | `/register/[role]` | `app/register/[role]/page.tsx` | Personal info form |
-| `/register/[role]/verify` | `app/register/[role]/verify/page.tsx` | 4-digit code |
+| `/register/[role]/verify` | `app/register/[role]/verify/page.tsx` | 6-digit code |
 | `/register/[role]/password` | `app/register/[role]/password/page.tsx` | Password + confirm + strength |
 | `/register/[role]/success` | `app/register/[role]/success/page.tsx` | Created → redirect |
 

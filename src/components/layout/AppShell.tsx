@@ -375,13 +375,15 @@ export function AppShell({
                   </span>
                 </Link>
               ) : null}
-              <button
-                type="button"
-                aria-label="Export"
-                className="hidden items-center gap-2 rounded-xl bg-[var(--sidebar)] px-4 py-2.5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(10,42,140,0.25)] transition hover:bg-[#07206E] sm:inline-flex"
-              >
-                Export <span className="text-[#7CA8FF]">⤓</span>
-              </button>
+              {pathname === "/" && role !== "LANDLORD" ? null : (
+                <button
+                  type="button"
+                  aria-label="Export"
+                  className="hidden items-center gap-2 rounded-xl bg-[var(--sidebar)] px-4 py-2.5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(10,42,140,0.25)] transition hover:bg-[#07206E] sm:inline-flex"
+                >
+                  Export <span className="text-[#7CA8FF]">⤓</span>
+                </button>
+              )}
             </div>
           </header>
 

@@ -25,6 +25,36 @@ export async function requestEmailVerification(
   };
 }
 
+export type RequestSignupCodeResult = {
+  success: boolean;
+  /** Only present outside production, when no email server is wired up. */
+  signupCode?: string;
+};
+
+/**
+ * Proves ownership of an email address BEFORE the account is created —
+ * the registration order is details -> verify -> password, so there's no
+ * User row yet to attach a Token to (see backend AuthService.sendSignupCode).
+ */
+export async function requestSignupCode(email: string): Promise<RequestSignupCodeResult> {
+  const raw = await apiFetch("/auth/register/send-code", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+  const data = asRecord(raw);
+  return {
+    success: Boolean(data.success ?? true),
+    signupCode: typeof data.signupCode === "string" ? data.signupCode : undefined,
+  };
+}
+
+export async function verifySignupCode(params: { email: string; code: string }): Promise<void> {
+  await apiFetch("/auth/register/verify-code", {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
+}
+
 export type VerifyEmailResult = {
   accessToken: string;
   user: {

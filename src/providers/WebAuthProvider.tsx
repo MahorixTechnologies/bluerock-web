@@ -41,7 +41,14 @@ type WebAuthContextValue = {
   profile: WebUserProfile | null;
   accessToken: string | null;
   login: (params: LoginParams) => Promise<void>;
-  register: (params: RegisterParams) => Promise<void>;
+  /**
+   * Returns `{ signedIn: true }` when the backend created an
+   * already-verified account and issued a session (the normal case: the
+   * web signup flow always verifies the email via /verify before this is
+   * called). `{ signedIn: false }` means the account exists but is
+   * unverified — the caller should route back to the verify step.
+   */
+  register: (params: RegisterParams) => Promise<{ signedIn: boolean }>;
   logout: () => Promise<void>;
   refreshUserProfile: (next: Partial<WebUserProfile>) => void;
   /**
@@ -136,11 +143,15 @@ async function loginWithApi({
 }
 
 /**
- * Deliberately returns no accessToken — the backend never issues one at
- * registration. The account exists but is unverified and cannot log in
- * until the emailed 6-digit code is confirmed via verifyEmail() below.
+ * The backend only issues an accessToken here when the email was already
+ * verified before this call (see VerificationStep -> /auth/register/verify-code,
+ * which the web signup flow always runs first). Without that prior
+ * verification the account is created but unverified, and no token comes
+ * back — the caller falls back to routing at the verify step.
  */
-async function registerWithApi(params: RegisterParams): Promise<{ profile: WebUserProfile }> {
+async function registerWithApi(
+  params: RegisterParams,
+): Promise<{ profile: WebUserProfile; accessToken: string | null }> {
   if (!API_URL) {
     throw new Error("API_URL not configured");
   }
@@ -181,6 +192,7 @@ async function registerWithApi(params: RegisterParams): Promise<{ profile: WebUs
           ? data.role
           : params.role,
     },
+    accessToken: typeof payload.accessToken === "string" ? payload.accessToken : null,
   };
 }
 
@@ -269,13 +281,16 @@ export function WebAuthProvider({ children }: { children: ReactNode }) {
         }
       },
       register: async (params) => {
-        // Registering never signs the user in — the account is unverified
-        // until the emailed code is confirmed (see completeVerification).
-        // There's no session yet, so status goes straight back to signedOut
-        // rather than sitting in "loading" indefinitely.
         if (API_URL) {
-          await registerWithApi(params);
-          return;
+          const result = await registerWithApi(params);
+          if (result.accessToken) {
+            setSession({ profile: result.profile, accessToken: result.accessToken });
+            setStatus("signedIn");
+            return { signedIn: true };
+          }
+          // No token means the account was created unverified (the caller
+          // skipped /verify) — stay signed out, same as a fresh page load.
+          return { signedIn: false };
         }
         // Demo/offline fallback (no backend configured): there's no real
         // email to verify against, so this path keeps its old
@@ -294,6 +309,7 @@ export function WebAuthProvider({ children }: { children: ReactNode }) {
           };
           setSession(next);
           setStatus("signedIn");
+          return { signedIn: true };
         } catch (err) {
           setStatus("signedOut");
           throw err;

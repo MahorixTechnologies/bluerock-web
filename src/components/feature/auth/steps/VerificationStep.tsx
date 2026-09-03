@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { getRoleContent, maskEmail, type Role } from "../data";
@@ -14,13 +14,11 @@ import {
 import { OtpInput } from "../OtpInput";
 import { WarningIcon } from "../icons";
 import { AuthShell } from "../AuthShell";
-import { requestEmailVerification, verifyEmail } from "@/api/auth";
-import { useWebAuth } from "@/providers/WebAuthProvider";
+import { requestSignupCode, verifySignupCode } from "@/api/auth";
 
 export function VerificationStep({ role }: { role: Role }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { completeVerification } = useWebAuth();
   const content = getRoleContent(role);
   const email = searchParams.get("email") ?? "jsmith@gmail.com";
 
@@ -30,18 +28,19 @@ export function VerificationStep({ role }: { role: Role }) {
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [requestNotice, setRequestNotice] = useState<string | null>(null);
+  const requestedRef = useRef(false);
 
   async function sendCode() {
     setRequesting(true);
     setError(null);
     setRequestNotice(null);
     try {
-      const result = await requestEmailVerification(email);
-      if (result.emailVerificationCode) {
-        setDemoToken(result.emailVerificationCode);
-        setCode(result.emailVerificationCode);
+      const result = await requestSignupCode(email);
+      if (result.signupCode) {
+        setDemoToken(result.signupCode);
+        setCode(result.signupCode);
       } else {
-        setRequestNotice("If an account exists for this email, a verification code was sent.");
+        setRequestNotice("If this email isn't already registered, a verification code was sent.");
       }
     } catch (err) {
       if (err instanceof Error && err.message === "API_URL not configured") {
@@ -56,11 +55,15 @@ export function VerificationStep({ role }: { role: Role }) {
     }
   }
 
-  // A verification code was already emailed as part of account creation
-  // (AuthService.register issues one automatically) — resending here on
-  // mount would silently invalidate that code and send a second email for
-  // every signup. Only fire a new one when the user explicitly asks via
-  // "Resend Code".
+  // No account exists yet at this point in the flow — details -> verify ->
+  // password, in that order — so this is the only place a code gets sent
+  // for a given signup; auto-fire it once on arrival.
+  useEffect(() => {
+    if (requestedRef.current) return;
+    requestedRef.current = true;
+    void sendCode();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!content) return null;
 
@@ -70,15 +73,8 @@ export function VerificationStep({ role }: { role: Role }) {
     setVerifying(true);
     setError(null);
     try {
-      const result = await verifyEmail({ email, code: code.trim() });
-      completeVerification(result.accessToken, {
-        email: result.user.email,
-        name: result.user.name ?? "",
-        phone: result.user.phone ?? "",
-        emailVerified: result.user.emailVerified,
-        role: result.user.role,
-      });
-      router.push(`/register/${role}/success`);
+      await verifySignupCode({ email, code: code.trim() });
+      router.push(`/register/${role}/password?email=${encodeURIComponent(email)}`);
     } catch (err) {
       setError(
         err instanceof Error
